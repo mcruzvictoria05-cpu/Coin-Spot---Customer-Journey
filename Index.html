@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coin Spot — VARA Journey Playbook</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        fontSize: '14px',
+        primaryColor: '#00ACC1',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#00838F',
+        lineColor: '#546E7A',
+        secondaryColor: '#37474F',
+        tertiaryColor: '#f5f5f5'
+      },
+      flowchart: { curve: 'basis', useMaxWidth: false }
+    });
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 28px;
+      margin: 0;
+      color: #212121;
+    }
+    h1 {
+      color: #1a237e;
+      border-bottom: 4px solid #00BCD4;
+      padding-bottom: 14px;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #546E7A;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    .journey {
+      background: white;
+      border: 1px solid #e0e0e0;
+      margin: 28px 0;
+      padding: 24px;
+      border-radius: 6px;
+      border-top: 5px solid #00BCD4;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .journey.new-diagram { border-top-color: #1a237e; }
+    .journey h2 {
+      color: #1a237e;
+      margin-top: 0;
+      font-size: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eeeeee;
+      margin-bottom: 16px;
+    }
+    .badge {
+      display: inline-block;
+      background: #1a237e;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+      vertical-align: middle;
+      letter-spacing: 0.5px;
+    }
+    .added-note {
+      background: #E8F5E9;
+      border-left: 4px solid #43A047;
+      padding: 10px 14px;
+      margin: 16px 0 0 0;
+      font-size: 13px;
+      color: #1B5E20;
+      border-radius: 2px;
+      line-height: 1.7;
+    }
+    .new-note {
+      background: #E3F2FD;
+      border-left: 4px solid #1976D2;
+      padding: 10px 14px;
+      margin: 16px 0 0 0;
+      font-size: 13px;
+      color: #0D47A1;
+      border-radius: 2px;
+      line-height: 1.7;
+    }
+    .valid {
+      display: inline-block;
+      background: #E8F5E9;
+      color: #2E7D32;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin-top: 12px;
+    }
+    .mermaid {
+      overflow-x: auto;
+      padding: 8px 0;
+    }
+    .toc {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .toc h3 { color: #1a237e; margin-top: 0; }
+    .toc ol { margin: 0; padding-left: 20px; line-height: 2; }
+    .toc a { color: #1976D2; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<h1>Coin Spot — VARA Journey Playbook</h1>
+<p class="subtitle">Mermaid Diagrams — Customer Journeys, Technical Architecture, Security &amp; Integrations</p>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#j1">Journey 1: Customer Registration &amp; KYC Onboarding</a></li>
+    <li><a href="#j2">Journey 2: Authentication &amp; Session Management</a></li>
+    <li><a href="#j3">Journey 3: OTC Trade Execution</a></li>
+    <li><a href="#j4">Journey 4: AED &amp; Crypto Deposits</a></li>
+    <li><a href="#j5">Journey 5: AED &amp; Crypto Withdrawals</a></li>
+    <li><a href="#j6">Journey 6: KYC / EDD Admin Review</a></li>
+    <li><a href="#j7">Journey 7: Sanctions &amp; AML Screening</a></li>
+    <li><a href="#j8">Journey 8: Treasury &amp; Client Asset Safeguarding</a></li>
+    <li><a href="#j9">Journey 9: Customer Account Management</a></li>
+    <li><a href="#j10">Journey 10: Compliance Reporting &amp; MLRO Dashboard</a></li>
+    <li><a href="#j11">Journey 11: Cross-Journey Data Flow</a></li>
+    <li><a href="#d12">Diagram 12: Technical Architecture</a></li>
+    <li><a href="#d13">Diagram 13: Network &amp; Security Architecture</a></li>
+    <li><a href="#d14">Diagram 14: Redundancy, Failover &amp; Disaster Recovery</a></li>
+    <li><a href="#d15">Diagram 15: External Integrations</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 1 -->
+<!-- ============================================================ -->
+<div class="journey" id="j1">
+  <h2>Journey 1: Customer Registration &amp; KYC Onboarding</h2>
+  <div class="mermaid">
+flowchart TD
+    REG["/register — name, email, password, nationality"]:::blue
+    REG -->|"POST /auth/register"| GW["WAF + API Gateway — rate limit, schema validation, TLS"]:::teal
+    GW --> AUTHSVC["Identity / Auth Service — creates account, returns accessToken + httpOnly cookie"]:::teal
+    AUTHSVC --> CPD["Customer Profile DB — PII stored, AES-256 encrypted at rest, KMS-managed keys"]:::navy
+    AUTHSVC -->|"audit event"| AL1["Audit Log — account_created: timestamp + IP"]:::navy
+    AUTHSVC -->|"POST /verify/email"| OTP1["/onboard/verify-email — OTP sent via email MFA Provider"]:::teal
+    OTP1 --> EMAILDEC{"Email OTP valid?"}:::amber
+    EMAILDEC -->|"Expired — resend"| OTP1
+    EMAILDEC -->|"Yes"| OTP2["/onboard/verify-phone — OTP sent via SMS MFA Provider"]:::teal
+    OTP2 -->|"POST /verify/phone"| TERMS["/onboard/terms — Client Agreement + Risk Disclosures"]:::teal
+    TERMS -->|"POST /agreements/accept"| KYCW["/onboard/kyc — Launch VerifiX widget"]:::teal
+    KYCW -->|"POST /kyc/session"| KP["KYC Provider API — VerifiX session, doc type + country params"]:::teal
+    KP --> VFX["VerifiX — Passport/EID + Selfie + Liveness + PoA"]:::teal
+    VFX --> DS["KYC Document Store — encrypted docs + metadata, object storage, at-rest encryption"]:::navy
+    VFX -->|"Webhook callback — JWKS verified"| SCR{"KYC + AML Screen — VerifiX result + sanctions check"}:::amber
+    SCR -->|"Approved + Clean"| INV["Investor Classification — Retail / Professional / Institutional"]:::teal
+    SCR -->|"PEP / Sanctions hit"| MLROQ["MLRO Review Queue — alert raised, compliance case created"]:::red
+    SCR -->|"Pending"| COR["Compliance Officer Manual Review"]:::teal
+    SCR -->|"Rejected"| RETRY["/kyc-retry — Customer re-submits"]:::red
+    INV -->|"MLRO clears"| DASH["/dashboard — Full trading access"]:::green
+    MLROQ -->|"MLRO clears"| DASH
+    COR -->|"CO approves"| DASH
+    RETRY --> KYCW
+    DASH -->|"audit event"| AL2["Audit Log — kyc_approved, KYC status callback + API response stored"]:::navy
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> WAF + API Gateway (TLS, rate limit, schema validation); Identity/Auth Service layer; Customer Profile DB (AES-256/KMS at-rest encryption); KYC Provider API node (VerifiX session parameters); KYC Document Store (object storage, encrypted); MFA Provider references for email + SMS OTP; Audit Log nodes (account_created, kyc_approved); KYC status callback / API response stored in Audit Log.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 2 -->
+<!-- ============================================================ -->
+<div class="journey" id="j2">
+  <h2>Journey 2: Authentication &amp; Session Management</h2>
+  <div class="mermaid">
+flowchart TD
+    LOGIN["/login — Email + Password"]:::blue
+    ADMIN["/admin/login"]:::amber
+    LOGIN -->|"POST /auth/login"| WAF["WAF — rate limiting, IP reputation, DDoS protection"]:::teal
+    ADMIN -->|"POST /auth/admin/login"| WAF
+    WAF --> APIGW["API Gateway — JWT schema validation, request routing"]:::teal
+    APIGW --> AUTHSVC["Identity / Auth Service — credential verification, RBAC enforcement"]:::teal
+    AUTHSVC --> USERDEC{"2FA enabled?"}:::amber
+    AUTHSVC --> ADMINDEC{"2FA mandatory"}:::amber
+    USERDEC -->|"No"| ISSAT["Issue accessToken in memory + Refresh in httpOnly cookie"]:::teal
+    USERDEC -->|"Yes"| MFA1["/login/2fa — TOTP authenticator code"]:::teal
+    MFA1 -->|"MFA Provider validates TOTP"| ISSAT
+    ADMINDEC -->|"POST /auth/admin/verify-2fa"| MFA2["/admin/2fa — TOTP"]:::teal
+    MFA2 -->|"MFA Provider validates TOTP"| ADMINTKN["Issue admin-scoped token — RBAC: admin role asserted"]:::teal
+    ISSAT --> TSTORE["Session / Token Store — Redis — accessToken + refresh token metadata"]:::navy
+    ADMINTKN --> TSTORE
+    ISSAT --> DASH["/dashboard — Session active, 15 min token"]:::teal
+    ADMINTKN --> ADMINDASH["/admin/dashboard"]:::teal
+    DASH -->|"Token expires"| INT["401 interceptor fires"]:::teal
+    ADMINDASH -->|"POST /auth/logout"| LOGOUT["Clear cookies — Blacklist token JTI — Audit log entry"]:::teal
+    INT -->|"POST /auth/refresh — cookie auto-sent"| REFDEC{"Refresh valid?"}:::amber
+    REFDEC -->|"Yes"| NEWTOK["New accessToken — resume session"]:::teal
+    REFDEC -->|"No"| REDIR["Redirect /login — Session log entry"]:::red
+    LOGOUT --> AL["Audit Log — session_ended + token_revoked + IP + user-agent"]:::navy
+    NEWTOK --> TSTORE
+    REDIR --> AL
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> WAF layer (rate limiting, IP reputation, DDoS); API Gateway (JWT schema, request routing); Identity/Auth Service node with RBAC enforcement label; Session/Token Store (Redis — access + refresh token metadata); MFA Provider references for TOTP validation; RBAC admin-role assertion on admin token issuance; Audit Log node (session_ended, token_revoked, IP, user-agent) covering logout and session revocation.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 3 -->
+<!-- ============================================================ -->
+<div class="journey" id="j3">
+  <h2>Journey 3: OTC Trade Execution</h2>
+  <div class="mermaid">
+flowchart TD
+    TRADE["/trade — Select asset + enter AED or VA amount"]:::blue
+    TRADE -->|"GET /trade/config"| CFG["Trading / OTC Service — Load config: spread, fees, min/max, approved asset list"]:::teal
+    CFG --> INPUT["Customer enters trade — AED vs USDT / USDC / BTC / ETH"]:::teal
+    INPUT -->|"POST /trade/quote"| QSVC["Pricing / Liquidity Provider API — fetches LP price, applies spread + fee, returns quote + expiry"]:::teal
+    QSVC --> QCARD["Quote card — price, amount, fee, expiry countdown"]:::teal
+    QCARD -->|"Customer accepts"| INIT["POST /trade/initiate"]:::teal
+    INIT --> FA["2FA Challenge — TOTP"]:::teal
+    FA -->|"TOTP verified"| ATOM["atomicMarkAccepted — only first caller wins, idempotency lock"]:::teal
+    ATOM --> TRADDB["Order / Trade DB — trade record created, status: PENDING"]:::navy
+    ATOM --> KYT{"KYT Screen"}:::amber
+    KYT -->|"Risk flag"| HALT["Halt — MLRO escalation"]:::red
+    KYT -->|"Clean"| PROC["Trade PROCESSING"]:::teal
+    PROC -->|"AED leg"| BANK["Bank AED transfer — bank payout API"]:::teal
+    PROC -->|"VA leg"| CUST["Custodian VA transfer — custody / wallet provider"]:::teal
+    BANK --> SETT{"Settlement result"}:::amber
+    CUST --> SETT
+    SETT -->|"Settled"| COMP["Trade COMPLETED — Confirmation to customer"]:::green
+    SETT -->|"Partial"| MAN["REQUIRES_MANUAL_PROCESSING — Admin + Compliance review"]:::orange
+    SETT -->|"Full fail"| FAIL["FAILED — no funds moved, customer notified"]:::red
+    COMP --> LEDG["Client Ledger — debit / credit posting, balance updated"]:::navy
+    COMP --> TRAL["Trade Audit Log — trade_completed: price, amount, fee, counterparty, timestamp"]:::navy
+    FAIL -->|"Retry eligible"| INIT
+    MAN --> TRAL
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Trading / OTC Service label on config node; Pricing / Liquidity Provider API node (LP price fetch, spread + fee application); Order / Trade DB (trade record creation, status tracking); Bank payout API label on AED leg; Custody / Wallet Provider label on VA leg; Client Ledger posting node (debit/credit on completion); Trade Audit Log node (trade_completed event with full metadata); Failure / Retry path from FAILED back to initiate.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 4 -->
+<!-- ============================================================ -->
+<div class="journey" id="j4">
+  <h2>Journey 4: AED &amp; Crypto Deposits</h2>
+  <div class="mermaid">
+flowchart TD
+    DEP["/deposit — Customer chooses deposit type"]:::teal
+    DEP --> TDEC{"Type?"}:::amber
+    TDEC -->|"AED Fiat"| IBAN["GET /accounts/virtual — Show segregated IBAN"]:::teal
+    TDEC -->|"Virtual Asset"| ADDR["GET /assets/deposit-address — Custody deposit address generation + QR"]:::teal
+    IBAN --> XFER["Customer transfers AED from external bank"]:::teal
+    XFER --> BWEB["Bank / Payment Partner Webhook — POST /bank/webhooks/transfer — HMAC verified"]:::teal
+    ADDR --> CADMON["Custody / Wallet Provider — Blockchain node monitoring for incoming tx"]:::teal
+    CADMON -->|"Blockchain node confirms tx"| CWEB["Custodian webhook — POST /custody/webhooks/deposit — JWKS verified"]:::teal
+    CWEB --> KYT["KYT Screen — Origin of funds check"]:::teal
+    BWEB --> IDEM["Dual idempotency check — 1. Event ID Redis SET NX — 2. Tx+status combo"]:::teal
+    KYT --> IDEM
+    IDEM --> DUPDEC{"Duplicate?"}:::amber
+    DUPDEC -->|"Yes"| SKIP["Skip — already processed"]:::navy
+    DUPDEC -->|"No"| AML["AML velocity check + Sanctions re-screen on sender"]:::teal
+    AML --> FLAGDEC{"Flags?"}:::amber
+    FLAGDEC -->|"Clean"| LPOST["Ledger credit posting — client balance updated, reconciliation feed queued"]:::green
+    FLAGDEC -->|"Flagged"| HOLD["HOLD — Compliance review"]:::red
+    LPOST --> RECON["Deposit Reconciliation Feed — daily balance file to treasury service"]:::navy
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Bank / Payment Partner Webhook with HMAC verification label; Custody / Wallet Provider node (blockchain node monitoring for incoming transactions); Blockchain node confirmation label on custodian webhook path; Custody deposit address generation label on VA path; KYT Screen node for origin of funds on VA deposits; Ledger credit posting node (balance update + reconciliation feed queued); Deposit Reconciliation Feed node (daily balance file to treasury service).</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 5 -->
+<!-- ============================================================ -->
+<div class="journey" id="j5">
+  <h2>Journey 5: AED &amp; Crypto Withdrawals</h2>
+  <div class="mermaid">
+flowchart TD
+    WDR["/withdraw — Enter amount + select beneficiary"]:::orange
+    WDR -->|"GET /profile/limits"| LCHECK{"Within limits?"}:::amber
+    LCHECK -->|"No"| WARN["Warning — daily/monthly limit reached, Customer contacts Compliance"]:::teal
+    LCHECK -->|"Yes"| FEE["Fee calculation — FIXED / PERCENTAGE / TIERED, pre-trade disclosure shown"]:::teal
+    FEE -->|"POST /withdrawals/initiate"| WLCHK["Whitelist check — server validates amount, min/max, balance, beneficiary whitelist address controls"]:::teal
+    WLCHK --> BALDEC{"Balance OK + beneficiary approved?"}:::amber
+    BALDEC -->|"No"| ERR["Error displayed"]:::red
+    BALDEC -->|"Yes"| FA2["2FA Challenge — TOTP"]:::teal
+    FA2 -->|"POST /withdrawals/confirm"| AUTHDEC{"Auto-approve threshold"}:::amber
+    AUTHDEC -->|"Below threshold"| AUTOQ["PENDING to AUTO_APPROVED — Queued for processing"]:::teal
+    AUTHDEC -->|"Above threshold"| PEND["PENDING_APPROVAL — Maker-checker: Admin + Compliance review queue"]:::teal
+    AUTOQ --> ADMPATH["/admin/treasury/withdrawals — Approval workflow"]:::teal
+    PEND --> ADMPATH
+    ADMPATH --> AMDEC{"Amount?"}:::amber
+    AMDEC -->|"High value"| DUAL["Dual approval — 2 signatories required, Maker-Checker enforced"]:::teal
+    AMDEC -->|"Standard"| SINGLE["Single admin approval + notes"]:::teal
+    DUAL -->|"AED payout"| BANKAPI["Bank Payout API — transfer instruction sent to payment partner"]:::teal
+    DUAL -->|"Crypto payout"| CUSTSGN["Custody Signer / Wallet Provider — multi-sig signing"]:::teal
+    SINGLE -->|"AED payout"| BANKAPI
+    SINGLE -->|"Crypto payout"| CUSTSGN
+    CUSTSGN -->|"Broadcast"| BCHAIN["Blockchain broadcast — tx signed + submitted to network node"]:::teal
+    BANKAPI --> BRES{"Bank result"}:::amber
+    BCHAIN --> BRES
+    BRES -->|"Success"| CDONE["COMPLETED — balance deducted"]:::green
+    BRES -->|"Failed"| CFAIL["FAILED — admin + Compliance notified"]:::red
+    CFAIL -->|"Retry eligible"| ADMPATH
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Whitelist check node (beneficiary whitelist address controls label); Maker-Checker approval label on PENDING_APPROVAL path; Withdrawal approval workflow label on admin treasury path; Custody Signer / Wallet Provider node (multi-sig signing); Bank Payout API node (transfer instruction to payment partner); Blockchain broadcast node (tx signed + submitted to network node); Failure / Retry path from FAILED back to approval workflow.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 6 -->
+<!-- ============================================================ -->
+<div class="journey" id="j6">
+  <h2>Journey 6: KYC / EDD Admin Review</h2>
+  <div class="mermaid">
+flowchart TD
+    QUEUE["/admin/kyc-queue — Filter: pending, PEP, high-risk, EDD"]:::purple
+    QUEUE -->|"GET /admin/kyc/applications"| RBAC["Admin Portal — RBAC enforced, privileged access gateway, MFA required"]:::navy
+    RBAC --> APLIST["Application list — PENDING / REVIEW items, risk score, nationality, tier"]:::teal
+    APLIST --> CASEDB["Case Management DB — case loaded, reviewer assigned, access logged"]:::navy
+    CASEDB -->|"GET /admin/kyc/:id"| FULLV["/admin/kyc/:id — Full submission view"]:::teal
+    FULLV --> DOCR["Evidence / Document Repository — ID, selfie, liveness, PoA, AML screen result, risk score"]:::navy
+    DOCR --> CODEC{"Compliance Officer decision"}:::amber
+    CODEC -->|"Approve / Standard EDD"| APPRV["PUT .../approve — Customer VERIFIED"]:::teal
+    CODEC -->|"Trigger EDD"| EDDR["POST .../edd — SoW/SoF documents required"]:::teal
+    CODEC -->|"PEP interest"| ESCM["Escalate to MLRO — Senior management approval required"]:::teal
+    CODEC -->|"Reject"| REJR["PUT .../reject + reason — Customer notified, can resubmit"]:::red
+    CODEC -->|"Assign"| ASGN["POST .../assign — Reassign to another CO"]:::teal
+    EDDR --> EDDDEC{"EDD satisfied?"}:::amber
+    EDDDEC -->|"Yes"| ACTIV["Account ACTIVE — Annual review scheduled"]:::green
+    EDDDEC -->|"No"| SUSP["Account suspended — MLRO notified"]:::red
+    ESCM --> MLROD["MLRO decision — clear or exit"]:::teal
+    MLROD -->|"Clear"| ACTIV
+    APPRV --> AUDT["Decision Audit Trail — reviewer ID, decision, rationale, timestamp"]:::navy
+    ACTIV --> AUDT
+    REJR --> AUDT
+    ASGN --> AUDT
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Admin Portal node (RBAC enforced, privileged access gateway, MFA required); Case Management DB node (case loaded, reviewer assigned, access logged); Evidence / Document Repository node (full document set accessible to reviewer); Decision Audit Trail node (reviewer ID, decision, rationale, timestamp written for all outcomes); Escalation to MLRO label clarified on PEP interest path.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 7 -->
+<!-- ============================================================ -->
+<div class="journey" id="j7">
+  <h2>Journey 7: Sanctions &amp; AML Screening</h2>
+  <div class="mermaid">
+flowchart TD
+    TRIG["Trigger points — Onboarding / Deposit / Withdrawal / Trade / Periodic re-screen"]:::purple
+    TRIG -->|"POST /aml/screen"| REALTIME["Real-time screening — AML / Sanctions Provider API call, sub-second SLA"]:::teal
+    TRIG -->|"Batch job — nightly"| BATCH["Batch screening — periodic re-screen of full customer base"]:::teal
+    REALTIME --> SANDB["VerifiX + Sanctions DB — UNSC, OFAC, EU, UAE lists"]:::teal
+    BATCH --> SANDB
+    SANDB --> LISTUPD["Sanctions list update flow — provider pushes delta feed, DB refreshed on schedule"]:::navy
+    SANDB --> SCRRES{"Screening result"}:::amber
+    SCRRES -->|"No hit"| CLEAN["CLEAN — proceed"]:::green
+    SCRRES -->|"Possible match"| FUZZY["GET /aml/hits — Fuzzy match review queue"]:::teal
+    FUZZY --> ACDB["Alert / Case DB — case created, assigned to CO, SLA timer started"]:::navy
+    ACDB --> TMRULES["Transaction Monitoring / Rules Engine — velocity, threshold, pattern rules evaluated"]:::teal
+    TMRULES --> CORP["Compliance Officer reviews — POST /aml/review + disposition"]:::teal
+    CORP --> DISP{"Disposition"}:::amber
+    DISP -->|"False positive"| FP["Documented false positive — added to exception register"]:::teal
+    DISP -->|"Confirmed hit"| FREEZE["POST /aml/freeze — Account + funds frozen immediately"]:::red
+    FREEZE --> MLRON["MLRO notified — 24hr window"]:::teal
+    FP --> SCRAL["Screening Audit Log — screen_id, result, reviewer, disposition, timestamp"]:::navy
+    MLRON --> STRDEC{"STR required?"}:::amber
+    STRDEC -->|"Yes"| SAR["POST /goaml/sar — Electronic SAR via goAML portal"]:::red
+    STRDEC -->|"No"| NFR["GET /aml/no-file-register — Add with rationale, MLRO signs off"]:::teal
+    SAR --> GOACK["goAML acknowledgment — FIU reference number stored"]:::teal
+    NFR --> GOACK
+    GOACK --> SCRAL
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Real-time screening node (AML/Sanctions Provider API, sub-second SLA label); Batch screening node (nightly periodic re-screen of full customer base); Sanctions list update flow node (provider delta feed, DB refresh schedule); Alert / Case DB node (case creation, CO assignment, SLA timer); Transaction Monitoring / Rules Engine node (velocity, threshold, pattern rules); Screening Audit Log node (screen_id, result, reviewer, disposition, timestamp).</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 8 -->
+<!-- ============================================================ -->
+<div class="journey" id="j8">
+  <h2>Journey 8: Treasury &amp; Client Asset Safeguarding</h2>
+  <div class="mermaid">
+flowchart TD
+    TREAS["/admin/treasury — Dashboard: all balances + NLA"]:::amber
+    TREAS -->|"GET /treasury/dashboard"| DASH["Show: Client AED segregated, Client VA custodian, Firm capital, NLA ratio, Reserve assets"]:::teal
+    DASH --> ACTDEC{"Action?"}:::amber
+    ACTDEC -->|"Daily NLA check"| NLACHK["GET /treasury/nla — Net Liquid Assets check"]:::teal
+    ACTDEC -->|"Reconciliation"| RECON["POST /treasury/reconciliation — Daily Reconciliation Engine"]:::teal
+    ACTDEC -->|"Emergency freeze"| EMERG["POST /treasury/emergency-freeze — Halt all deposits / withdrawals / trades"]:::red
+    ACTDEC -->|"Client accounts"| CLIVC["GET /treasury/client-accounts — Verify segregation vs operating accounts"]:::teal
+    NLACHK --> NLADEC{"NLA OK?"}:::amber
+    NLADEC -->|"Yes"| NLASO["Automated sign-off — Board report entry"]:::teal
+    NLADEC -->|"No — below buffer"| NLAAL["Alert: CFO + MLRO + Board — Contingency plan triggered"]:::red
+    RECON --> BANKFEED["Bank Balance Feed — latest statement pulled from banking partner API"]:::navy
+    RECON --> CUSTFEED["Custody / Wallet Balance Feed — real-time balance from custody provider API"]:::navy
+    BANKFEED --> CLEDGER["Client Ledger Comparison — internal ledger vs bank vs custody"]:::teal
+    CUSTFEED --> CLEDGER
+    CLEDGER --> DISCDEC{"Discrepancy?"}:::amber
+    DISCDEC -->|"Within tolerance"| AUTOSO["Auto sign-off — log entry"]:::teal
+    DISCDEC -->|"Outside tolerance"| EXCEPT["Exception management — Alert: manual resolution + notes, Compliance escalation"]:::red
+    EXCEPT --> SAFEV["Safeguarding Evidence Store — reconciliation report + exception docs stored"]:::navy
+    AUTOSO --> RECAL["Reconciliation Audit Trail — recon_id, timestamp, values, sign-off recorded"]:::navy
+    SAFEV --> RECAL
+    EMERG --> OPS["Operations suspended — Notification required"]:::red
+    CLIVC -->|"POST /accounts"| RESUME["Resume — audit log entry"]:::teal
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Daily Reconciliation Engine label on reconciliation node; Bank Balance Feed node (statement pulled from banking partner API); Custody / Wallet Balance Feed node (real-time balance from custody provider API); Client Ledger Comparison node (internal ledger vs bank vs custody); Exception management node (alert + manual resolution + compliance escalation); Safeguarding Evidence Store node (reconciliation report + exception docs stored); Reconciliation Audit Trail node (recon_id, timestamp, values, sign-off).</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 9 -->
+<!-- ============================================================ -->
+<div class="journey" id="j9">
+  <h2>Journey 9: Customer Account Management</h2>
+  <div class="mermaid">
+flowchart TD
+    CUST["/admin/customers — Search: Name, email, risk tier, KYC status"]:::pink
+    CUST -->|"GET /admin/customers"| CPDB["Customer Profile DB — PII access controlled, RBAC enforced, field-level access logging"]:::navy
+    CPDB --> CLIST["Customer list — KYC status, risk score, classification, last trade"]:::teal
+    CLIST -->|"GET /admin/customers/:id"| PROFV["/admin/customers/:id — Full profile view"]:::teal
+    PROFV --> TABS["Tabs: Profile, KYC docs, Trades, AML history, Notes, Audit trail"]:::teal
+    TABS --> AADEC{"Admin action"}:::amber
+    AADEC -->|"Suspend"| SUSP["PUT .../suspend — Customer cannot login or transact"]:::red
+    AADEC -->|"Activate"| ACT["PUT .../activate — Access restored, log entry"]:::green
+    AADEC -->|"EDD"| EDD["POST .../edd — Request SoW/SoF documents"]:::teal
+    AADEC -->|"Reclassify"| RECLASS["POST .../reclassify — Retail / Professional / Institutional"]:::teal
+    AADEC -->|"Force KYC review"| FKYCR["POST .../force-kyc-review — Annual refresh trigger"]:::teal
+    AADEC -->|"Audit trail"| AUDT["GET .../audit-trail — Every action logged, Account Status API response"]:::teal
+    AADEC -->|"Export"| EXP["GET .../export — Regulatory request pack"]:::teal
+    SUSP --> CHAT["Change Audit Trail — action, actor ID, timestamp, before/after state, rationale"]:::navy
+    ACT --> CHAT
+    EDD --> CHAT
+    RECLASS --> CHAT
+    FKYCR --> CHAT
+    CHAT --> DATRET["Data Retention Controls — retention period enforced, purge schedule, legal hold flag"]:::navy
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Customer Profile DB node (PII access controlled, RBAC enforced, field-level access logging); Account Status API reference in audit trail node label; Change Audit Trail node (action, actor ID, timestamp, before/after state, rationale — applied to all mutating actions); Data Retention Controls node (retention period enforcement, purge schedule, legal hold flag).</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 10 -->
+<!-- ============================================================ -->
+<div class="journey" id="j10">
+  <h2>Journey 10: Compliance Reporting &amp; MLRO Dashboard</h2>
+  <div class="mermaid">
+flowchart TD
+    COMP["/admin/compliance — MLRO Dashboard: alerts, queues, metrics"]:::blue
+    COMP -->|"GET /compliance/dashboard"| CDM["Compliance Data Mart — pre-aggregated KPIs from all services, refreshed hourly"]:::navy
+    CDM --> BILAY["Reporting / BI Layer — MLRO dashboard data source, read-only views, RBAC filtered"]:::navy
+    BILAY --> METRICS["Show: Open STR queue, EDD pending, No-file register count, NLA status, Sanctions hits, Monthly trade volume"]:::teal
+    METRICS --> MLROA{"MLRO action"}:::amber
+    MLROA -->|"STR filing"| STRQ["GET /compliance/str-queue — AML alerts ready for SAR decision"]:::teal
+    MLROA -->|"Annual report"| ARPT["POST /compliance/mlro-report — Annual Board Report on AML/CFT programme"]:::teal
+    MLROA -->|"Regulatory filing"| VFIL["GET /compliance/vara-filings — Periodic returns, incident reports, material change notifications"]:::teal
+    MLROA -->|"Risk assessment"| RISKA["GET /compliance/risk-assessment — Business-wide AML/CFT risk assessment"]:::teal
+    STRQ --> FNDEC{"File or No-File?"}:::amber
+    FNDEC -->|"File STR"| SARPOST["POST /goaml/sar — Electronic SAR, 24hr window"]:::red
+    FNDEC -->|"No-file"| NFILE["GET /compliance/no-file-register — Record reason, MLRO sign-off"]:::teal
+    SARPOST --> APPRWF["Report Approval Workflow — MLRO sign-off + second reviewer confirmation"]:::teal
+    ARPT --> APPRWF
+    VFIL --> PORTAL["Submit via portal — Deadline tracking"]:::teal
+    APPRWF --> EVSTORE["Evidence Storage — approved reports, supporting data, sign-off chain archived"]:::navy
+    PORTAL --> EVSTORE
+    NFILE --> GOACK["goAML acknowledgment — FIU reference, tipping-off prohibition active"]:::green
+    SARPOST --> GOACK
+    GOACK --> IMMAL["Immutable Audit Trail — report_id, approver, submission timestamp, hash, WORM storage"]:::navy
+    EVSTORE --> IMMAL
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Compliance Data Mart node (pre-aggregated KPIs from all services, hourly refresh); Reporting / BI Layer node (MLRO dashboard data source, read-only views, RBAC filtered); Report Approval Workflow node (MLRO sign-off + second reviewer confirmation, applied to SAR and annual report); Evidence Storage node (approved reports, supporting data, sign-off chain archived); Immutable Audit Trail node (report_id, approver, submission timestamp, hash, WORM storage).</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOURNEY 11 — NEW -->
+<!-- ============================================================ -->
+<div class="journey new-diagram" id="j11">
+  <h2>Journey 11: Cross-Journey Data Flow <span class="badge">NEW</span></h2>
+  <div class="mermaid">
+flowchart TD
+    subgraph FRONT["Presentation Layer"]
+        direction LR
+        CAPP["Customer App — web/mobile"]:::blue
+        ADMCON["Admin Console — staff portal"]:::amber
+    end
+
+    subgraph GATEWAY["API Gateway + Auth"]
+        direction LR
+        APIGW["API Gateway — TLS, JWT validation, rate limiting"]:::teal
+        AUTHSVC["Identity / Auth Service — token issuance, RBAC, session store"]:::teal
+    end
+
+    subgraph CORESVCS["Core Platform Services"]
+        direction LR
+        CUSTSVC["Customer / Account Service"]:::teal
+        KYCSVC["KYC Service"]:::teal
+        AMLSVC["AML / Screening Service"]:::teal
+        TRADESVC["Trading / OTC Service"]:::teal
+        DEPSVC["Deposits Service"]:::teal
+        WDRSVC["Withdrawals Service"]:::teal
+        TREASVC["Treasury / Reconciliation Service"]:::teal
+        REPSVC["Reporting Service"]:::teal
+    end
+
+    subgraph DATASTORES["Data Stores"]
+        direction LR
+        CPD["Customer Profile DB — PII, AES-256 at rest"]:::navy
+        KYCDS["KYC Document Store — encrypted object storage"]:::navy
+        AMLCD["AML / Compliance Case Store"]:::navy
+        LEDGER["Client Ledger — double-entry, immutable"]:::navy
+        CUSTODY["Wallet / Custody Records — custody provider mirror"]:::navy
+        AUDITLOG["Audit Log — append-only, all events"]:::navy
+        CDM["Compliance Data Mart — aggregated KPIs"]:::navy
+    end
+
+    subgraph REPORTING["Reporting + Dashboard"]
+        direction LR
+        MLROUI["MLRO Dashboard — real-time compliance view"]:::purple
+        REGOUT["Regulatory Reporting Output — VARA filings, goAML SARs, board reports"]:::purple
+    end
+
+    CAPP -->|"HTTPS"| APIGW
+    ADMCON -->|"HTTPS + MFA"| APIGW
+    APIGW --> AUTHSVC
+    APIGW --> CUSTSVC
+    APIGW --> KYCSVC
+    APIGW --> AMLSVC
+    APIGW --> TRADESVC
+    APIGW --> DEPSVC
+    APIGW --> WDRSVC
+    APIGW --> TREASVC
+    APIGW --> REPSVC
+
+    CUSTSVC -->|"read/write"| CPD
+    KYCSVC -->|"read/write"| KYCDS
+    KYCSVC -->|"status update"| CPD
+    AMLSVC -->|"case write"| AMLCD
+    AMLSVC -->|"screen event"| AUDITLOG
+    TRADESVC -->|"ledger post"| LEDGER
+    TRADESVC -->|"trade event"| AUDITLOG
+    DEPSVC -->|"ledger credit"| LEDGER
+    DEPSVC -->|"custody mirror"| CUSTODY
+    WDRSVC -->|"ledger debit"| LEDGER
+    WDRSVC -->|"custody update"| CUSTODY
+    TREASVC -->|"recon read"| LEDGER
+    TREASVC -->|"custody balance"| CUSTODY
+    REPSVC -->|"aggregate"| CDM
+    CDM -->|"feed"| MLROUI
+    CDM -->|"export"| REGOUT
+    AUDITLOG -->|"feed"| CDM
+    AMLCD -->|"feed"| CDM
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="new-note"><b>New diagram — Journey 11:</b> Shows cross-journey data flow across the full platform. Includes Customer App and Admin Console (presentation layer), API Gateway and Auth Service (gateway layer), all eight core platform services (customer, KYC, AML, trading, deposits, withdrawals, treasury, reporting), all data stores (Customer Profile DB, KYC Document Store, Compliance Case Store, Client Ledger, Custody Records, Audit Log, Compliance Data Mart), and the MLRO Dashboard and Regulatory Reporting output layer. Data flow edges are labelled with the operation type (read/write, ledger post, aggregate, export, etc.).</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIAGRAM 12 — NEW: Technical Architecture -->
+<!-- ============================================================ -->
+<div class="journey new-diagram" id="d12">
+  <h2>Diagram 12: Technical Architecture <span class="badge">NEW</span></h2>
+  <div class="mermaid">
+flowchart TD
+    subgraph CLIENT["Client Tier"]
+        direction LR
+        WEB["Web / Mobile Frontend — React SPA, iOS, Android"]:::blue
+        ADMPORT["Admin Portal — internal staff browser client"]:::amber
+    end
+
+    subgraph EDGE["Edge + Gateway Tier"]
+        WAFEDGE["WAF — DDoS, OWASP rule-set, bot protection"]:::teal
+        APIGWT["API Gateway — routing, JWT validation, rate limit, TLS termination"]:::teal
+        AUTHSVCT["Authentication / Session Service — OAuth2 / OIDC, MFA, RBAC, Redis token store"]:::teal
+    end
+
+    subgraph APP["Application Services Tier"]
+        direction LR
+        CUSTSVCT["Customer / Account Service"]:::teal
+        KYCSVCT["KYC Service — VerifiX integration, doc orchestration"]:::teal
+        AMLSVCT["AML / Screening Service — real-time + batch, rules engine"]:::teal
+        TRADESVCT["Trading / OTC Service — quote, price, atomic accept"]:::teal
+        DEPSVCT["Deposits Service — bank webhook, custodian webhook"]:::teal
+        WDRSVCT["Withdrawals Service — approval workflow, payout orchestration"]:::teal
+        TREASVCT["Treasury / Reconciliation Service — NLA, recon, safeguarding"]:::teal
+        REPSVCT["Reporting Service — BI aggregation, MLRO dashboard feed"]:::teal
+    end
+
+    subgraph DATA["Data Tier"]
+        direction LR
+        CUSTDBT["Customer Profile DB — PostgreSQL, encrypted, PII"]:::navy
+        KYCDSTT["KYC Document Store — object storage, AES-256, versioned"]:::navy
+        TRADEDB["Order / Trade DB — PostgreSQL, immutable trade records"]:::navy
+        AMLCDT["Compliance Case Store — case, alert, disposition records"]:::navy
+        LEDGERT["Client Ledger — double-entry accounting, append-only"]:::navy
+        CUSTODYT["Wallet / Custody Records — custody provider mirror DB"]:::navy
+        AUDITLOGT["Audit Log — WORM / append-only, all system events"]:::navy
+        CDMT["Compliance Data Mart — read replica + aggregation layer"]:::navy
+    end
+
+    subgraph EXT["External Integrations"]
+        direction LR
+        KYC_P["KYC Provider — VerifiX API"]:::purple
+        AML_P["AML / Sanctions Provider — real-time + list feed"]:::purple
+        BANK_P["Bank / Payment Partner — IBAN, payout API"]:::purple
+        CUST_P["Custody / Wallet Provider — signing, balance API"]:::purple
+        CHAIN_P["Blockchain Node Provider — tx broadcast + confirmation"]:::purple
+        COMM_P["Email / SMS / MFA Provider — OTP delivery"]:::purple
+        REG_P["Regulatory Output — goAML, VARA portal"]:::purple
+    end
+
+    WEB -->|"HTTPS"| WAFEDGE
+    ADMPORT -->|"HTTPS + VPN/PAG"| WAFEDGE
+    WAFEDGE --> APIGWT
+    APIGWT --> AUTHSVCT
+    APIGWT --> CUSTSVCT
+    APIGWT --> KYCSVCT
+    APIGWT --> AMLSVCT
+    APIGWT --> TRADESVCT
+    APIGWT --> DEPSVCT
+    APIGWT --> WDRSVCT
+    APIGWT --> TREASVCT
+    APIGWT --> REPSVCT
+
+    CUSTSVCT --- CUSTDBT
+    KYCSVCT --- KYCDSTT
+    KYCSVCT --- CUSTDBT
+    AMLSVCT --- AMLCDT
+    TRADESVCT --- TRADEDB
+    TRADESVCT --- LEDGERT
+    DEPSVCT --- LEDGERT
+    DEPSVCT --- CUSTODYT
+    WDRSVCT --- LEDGERT
+    WDRSVCT --- CUSTODYT
+    TREASVCT --- LEDGERT
+    TREASVCT --- CUSTODYT
+    REPSVCT --- CDMT
+    AUDITLOGT --- CDMT
+
+    KYCSVCT <-->|"API"| KYC_P
+    AMLSVCT <-->|"API"| AML_P
+    DEPSVCT <-->|"Webhook / API"| BANK_P
+    WDRSVCT <-->|"API"| BANK_P
+    DEPSVCT <-->|"Webhook / API"| CUST_P
+    WDRSVCT <-->|"API"| CUST_P
+    DEPSVCT <-->|"RPC"| CHAIN_P
+    WDRSVCT <-->|"RPC"| CHAIN_P
+    AUTHSVCT <-->|"API"| COMM_P
+    REPSVCT <-->|"Export"| REG_P
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="new-note"><b>New diagram — Technical Architecture:</b> Layered system architecture across five tiers: Client (web/mobile frontend, admin portal), Edge/Gateway (WAF, API Gateway, Auth/Session Service), Application Services (8 microservices), Data Tier (8 stores including audit log and compliance data mart), and External Integrations (KYC provider, AML provider, bank/payment partner, custody/wallet provider, blockchain node, email/SMS/MFA, regulatory output). All service-to-data and service-to-external connections shown with protocol labels.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIAGRAM 13 — NEW: Network & Security Architecture -->
+<!-- ============================================================ -->
+<div class="journey new-diagram" id="d13">
+  <h2>Diagram 13: Network &amp; Security Architecture <span class="badge">NEW</span></h2>
+  <div class="mermaid">
+flowchart TD
+    INET["Internet — Customer / Public Access"]:::blue
+
+    subgraph EDGE_ZONE["Edge Zone — Internet-facing"]
+        WAFSEC["WAF — OWASP Top-10 rule-set, DDoS protection, bot filtering, geo-blocking"]:::teal
+        FW1["Firewall Layer 1 — stateful packet inspection, ingress rules"]:::red
+    end
+
+    subgraph PUBLIC_SUBNET["Public Subnet — DMZ"]
+        APIGWSEC["API Gateway — TLS 1.2+ termination, JWT validation, rate limiting, CORS policy"]:::teal
+        LBAL["Load Balancer — health check, failover routing, SSL passthrough"]:::teal
+    end
+
+    subgraph PRIVATE_SUBNET["Private Subnet — Application Tier"]
+        APPSVCS["Application Services — containerised microservices, no direct internet access"]:::teal
+        AUTHSEC["Auth / Session Service — OAuth2/OIDC, MFA enforcement, RBAC policy engine"]:::teal
+    end
+
+    subgraph DB_SUBNET["Database Tier — Isolated Subnet"]
+        DBS["Databases — PostgreSQL, encrypted at rest AES-256, TLS in-transit"]:::navy
+        OBJSTO["Object / Document Storage — AES-256, versioning, access-logged"]:::navy
+        AUDLOG["Audit Log — WORM, append-only, tamper-evident"]:::navy
+    end
+
+    subgraph KEYMGMT["Key Management + Secrets"]
+        KMS["KMS / HSM — master key hierarchy, envelope encryption, key rotation"]:::navy
+        SECMGR["Secrets Manager — API keys, DB credentials, rotated automatically"]:::navy
+    end
+
+    subgraph ADMIN_PATH["Admin Access Path"]
+        VPN["VPN / Bastion / Privileged Access Gateway — MFA required, session recorded"]:::amber
+        FW2["Firewall Layer 2 — admin source IP restriction, least-privilege rules"]:::red
+        ADMINCONS["Admin Console — RBAC, read-only audit trail of all actions"]:::amber
+    end
+
+    subgraph MONITORING["Security Monitoring + Logging"]
+        SIEM["SIEM — centralised log aggregation, correlation rules, alerting"]:::purple
+        SECMON["Security Monitoring — real-time anomaly detection, IDS/IPS"]:::purple
+        LOGSHIP["Log Shipping — all service logs forwarded to SIEM, tamper-evident"]:::purple
+    end
+
+    INET --> WAFSEC
+    WAFSEC --> FW1
+    FW1 --> APIGWSEC
+    FW1 --> LBAL
+    APIGWSEC --> APPSVCS
+    LBAL --> APPSVCS
+    APPSVCS --> AUTHSEC
+    APPSVCS -->|"TLS in-transit"| DBS
+    APPSVCS -->|"TLS in-transit"| OBJSTO
+    APPSVCS -->|"append events"| AUDLOG
+    DBS -->|"envelope encrypt"| KMS
+    OBJSTO -->|"envelope encrypt"| KMS
+    APPSVCS -->|"fetch secrets"| SECMGR
+
+    INET -->|"VPN tunnel"| VPN
+    VPN --> FW2
+    FW2 --> ADMINCONS
+    ADMINCONS -->|"RBAC-gated"| APPSVCS
+
+    APPSVCS --> LOGSHIP
+    DBS --> LOGSHIP
+    AUDLOG --> LOGSHIP
+    LOGSHIP --> SIEM
+    SIEM --> SECMON
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="new-note"><b>New diagram — Network &amp; Security Architecture:</b> Covers internet/customer access → WAF → Firewall Layer 1 → Public Subnet (API Gateway, Load Balancer with TLS termination) → Private Subnet (application services, auth/session service with RBAC) → Database Tier (isolated subnet, AES-256 at rest, TLS in-transit) → Key Management (KMS/HSM, envelope encryption, key rotation) → Secrets Management → Admin access path (VPN/Bastion/Privileged Access Gateway with MFA, Firewall Layer 2, Admin Console with RBAC) → Security Monitoring (SIEM, IDS/IPS, log shipping to tamper-evident store). Encryption in transit (TLS) and at rest (AES-256/KMS) labelled on all relevant edges.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIAGRAM 14 — NEW: Redundancy, Failover & DR -->
+<!-- ============================================================ -->
+<div class="journey new-diagram" id="d14">
+  <h2>Diagram 14: Redundancy, Failover &amp; Disaster Recovery <span class="badge">NEW</span></h2>
+  <div class="mermaid">
+flowchart TD
+    subgraph PRIMARY["Primary Production Environment — AZ-A"]
+        direction TB
+        PAPIGW["API Gateway — active"]:::teal
+        PAPP["Application Services — active replicas"]:::teal
+        PDB["Primary DB — PostgreSQL, synchronous replication"]:::navy
+        POBJ["Object Storage — primary bucket"]:::navy
+        PAUDIT["Audit Log — primary WORM store"]:::navy
+    end
+
+    subgraph SECONDARY["Secondary / Standby Environment — AZ-B"]
+        direction TB
+        SAPIGW["API Gateway — warm standby"]:::teal
+        SAPP["Application Services — scaled-down standby"]:::teal
+        SDB["Standby DB — synchronous replica, auto-promote on failure"]:::navy
+        SOBJ["Object Storage — replicated bucket — geo-redundant"]:::navy
+        SAUDIT["Audit Log — replicated WORM store"]:::navy
+    end
+
+    subgraph BACKUP["Backup + Retention"]
+        direction TB
+        DBBACK["Database Backups — daily full + continuous WAL archiving — 90-day retention"]:::navy
+        OBJBACK["Object / Document Storage Backups — versioned, cross-region copy — 7-year retention"]:::navy
+        AUDRET["Audit Log Retention — WORM, immutable, minimum 7-year VARA requirement"]:::navy
+    end
+
+    subgraph MONITOR["Monitoring + Alerting"]
+        MMON["Monitoring — health checks, latency, error rate, saturation metrics"]:::purple
+        ALERT["Alerting — PagerDuty / ops channel, SLA breach triggers"]:::purple
+    end
+
+    subgraph FAILOVER["Failover Routing"]
+        DNS["DNS / Traffic Manager — health-based failover routing, RPO-aware"]:::amber
+        FOD{"Failover decision"}:::amber
+    end
+
+    subgraph DR["DR Restore Process"]
+        DRPLAN["DR Runbook — RTO target: 4hr, RPO target: 15min"]:::orange
+        DBREST["DB Restore — promote standby or restore from backup WAL"]:::teal
+        CUSTREC["Custody / Key Recovery — HSM key ceremony, custody provider coordination"]:::teal
+        VALTEST["Validation + Smoke Test — data integrity check, functional test suite"]:::teal
+        DRCOMP["DR Complete — services resumed, incident report filed"]:::green
+    end
+
+    PDB -->|"sync replication"| SDB
+    POBJ -->|"geo-replication"| SOBJ
+    PAUDIT -->|"replication"| SAUDIT
+
+    PDB -->|"WAL archive"| DBBACK
+    POBJ -->|"versioned copy"| OBJBACK
+    PAUDIT -->|"immutable copy"| AUDRET
+
+    PAPP --> MMON
+    PDB --> MMON
+    SAPP --> MMON
+    SDB --> MMON
+    MMON --> ALERT
+    ALERT --> FOD
+
+    DNS --> PAPIGW
+    DNS -->|"failover"| SAPIGW
+    FOD -->|"Primary healthy"| DNS
+    FOD -->|"Primary degraded"| DRPLAN
+
+    DRPLAN --> DBREST
+    DBREST --> CUSTREC
+    CUSTREC --> VALTEST
+    VALTEST --> DRCOMP
+    DRCOMP -->|"restore traffic"| DNS
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="new-note"><b>New diagram — Redundancy, Failover &amp; DR:</b> Shows Primary Production Environment (AZ-A) and Secondary/Standby Environment (AZ-B) with synchronous DB replication and geo-replicated object storage and audit log. Backup tier covers database (daily full + continuous WAL, 90-day retention), object storage (versioned cross-region, 7-year retention), and audit log (WORM immutable, 7-year VARA requirement). Monitoring and alerting feed into failover decision. DNS/Traffic Manager provides health-based failover routing. DR Restore Process includes runbook (RTO 4hr / RPO 15min placeholders), DB restore path, Custody/Key Recovery (HSM key ceremony), validation, and smoke test before traffic restoration.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIAGRAM 15 — NEW: External Integrations -->
+<!-- ============================================================ -->
+<div class="journey new-diagram" id="d15">
+  <h2>Diagram 15: External Integrations <span class="badge">NEW</span></h2>
+  <div class="mermaid">
+flowchart TD
+    PLATFORM["Coin Spot Platform — API Gateway + Application Services"]:::blue
+
+    subgraph KYC_INT["KYC Integration"]
+        KYCPROV["KYC Provider — VerifiX API — doc verification, liveness, sanctions"]:::purple
+        KYCWH["Webhook callback — JWKS-verified, result + risk score"]:::teal
+        KYCRTY["KYC retry — on callback failure: exponential backoff, dead-letter queue"]:::teal
+    end
+
+    subgraph AML_INT["AML / Sanctions Integration"]
+        AMLPROV["AML / Sanctions Provider — real-time screen API + sanctions list delta feed"]:::purple
+        AMLFEED["List update feed — scheduled pull, version-controlled, applied atomically"]:::navy
+        AMLRTY["AML retry — on timeout: queue + replay, alert on repeated failure"]:::teal
+    end
+
+    subgraph BANK_INT["Banking / Payment Integration"]
+        BANKPART["Bank / Payment Partner — IBAN management, inbound credit webhook, outbound payout API"]:::purple
+        BANKWH["Inbound webhook — HMAC-SHA256 signed, idempotency key enforced"]:::teal
+        BANKRTY["Payout retry — status poll, max 3 retries, failure escalation to ops"]:::teal
+        BANKRECON["Reconciliation file — daily MT940 / CSV balance feed from bank"]:::navy
+    end
+
+    subgraph CUST_INT["Custody / Wallet Integration"]
+        CUSTPROV["Custody / Wallet Provider — deposit address API, multi-sig signing, balance feed"]:::purple
+        CUSTWH["Deposit webhook — JWKS-verified, on-chain confirmation threshold"]:::teal
+        CUSTRTY["Signing retry — on provider outage: queue withdrawal, alert ops"]:::teal
+        CUSTRECON["Balance reconciliation feed — real-time balance API + daily snapshot"]:::navy
+    end
+
+    subgraph CHAIN_INT["Blockchain Integration"]
+        CHAINPROV["Blockchain Node Provider — RPC endpoint, tx broadcast, mempool monitoring"]:::purple
+        TXMON["Tx monitoring — confirmation count polling, webhook on finality"]:::teal
+        CHAINRTY["Broadcast retry — on node failure: fallback node provider, re-broadcast"]:::teal
+    end
+
+    subgraph COMM_INT["Communication / MFA Integration"]
+        COMMPROV["Email / SMS / MFA Provider — OTP delivery, email notifications, TOTP validation"]:::purple
+        COMMRTY["Delivery retry — SMS fallback to email, delivery receipt confirmation"]:::teal
+    end
+
+    subgraph REG_INT["Regulatory Integration"]
+        GOAML["goAML Portal — electronic SAR submission, FIU reference return"]:::purple
+        VARAPOR["VARA Portal — periodic filings, incident reports, material change notifications"]:::purple
+        REGAUTH["API authentication — username/password or API key, TLS mutual auth where required"]:::navy
+        REGEXP["Regulatory export — structured XML / PDF report generation, signed before submission"]:::teal
+    end
+
+    PLATFORM <-->|"REST API — OAuth2 bearer"| KYCPROV
+    KYCPROV -->|"result"| KYCWH
+    KYCWH --> PLATFORM
+    KYCPROV -->|"on failure"| KYCRTY
+    KYCRTY --> PLATFORM
+
+    PLATFORM <-->|"REST API — API key, TLS"| AMLPROV
+    AMLPROV -->|"delta feed"| AMLFEED
+    AMLFEED --> PLATFORM
+    AMLPROV -->|"on timeout"| AMLRTY
+    AMLRTY --> PLATFORM
+
+    PLATFORM <-->|"REST + Webhook — HMAC"| BANKPART
+    BANKPART -->|"inbound"| BANKWH
+    BANKWH --> PLATFORM
+    BANKPART -->|"on failure"| BANKRTY
+    BANKRTY --> PLATFORM
+    BANKPART -->|"daily"| BANKRECON
+    BANKRECON --> PLATFORM
+
+    PLATFORM <-->|"REST API — mTLS"| CUSTPROV
+    CUSTPROV -->|"deposit event"| CUSTWH
+    CUSTWH --> PLATFORM
+    CUSTPROV -->|"on outage"| CUSTRTY
+    CUSTRTY --> PLATFORM
+    CUSTPROV -->|"feed"| CUSTRECON
+    CUSTRECON --> PLATFORM
+
+    PLATFORM <-->|"JSON-RPC — TLS"| CHAINPROV
+    CHAINPROV -->|"confirmation"| TXMON
+    TXMON --> PLATFORM
+    CHAINPROV -->|"on failure"| CHAINRTY
+    CHAINRTY --> PLATFORM
+
+    PLATFORM <-->|"REST API — API key"| COMMPROV
+    COMMPROV -->|"on failure"| COMMRTY
+    COMMRTY --> PLATFORM
+
+    PLATFORM -->|"submit"| GOAML
+    PLATFORM -->|"file"| VARAPOR
+    GOAML --> REGAUTH
+    VARAPOR --> REGAUTH
+    PLATFORM --> REGEXP
+    REGEXP -->|"upload"| GOAML
+    REGEXP -->|"upload"| VARAPOR
+
+    classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
+    classDef teal fill:#00ACC1,color:#fff,stroke:#00838F,stroke-width:2px
+    classDef green fill:#43A047,color:#fff,stroke:#2E7D32,stroke-width:2px
+    classDef red fill:#E53935,color:#fff,stroke:#C62828,stroke-width:2px
+    classDef orange fill:#FB8C00,color:#fff,stroke:#E65100,stroke-width:2px
+    classDef amber fill:#FFB300,color:#212121,stroke:#FF8F00,stroke-width:2px
+    classDef purple fill:#7E57C2,color:#fff,stroke:#512DA8,stroke-width:2px
+    classDef navy fill:#37474F,color:#fff,stroke:#263238,stroke-width:2px
+    classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
+  </div>
+  <span class="valid">✓ Diagram syntax validated</span>
+  <div class="new-note"><b>New diagram — External Integrations:</b> Shows all third-party and platform integration points grouped by domain: KYC Provider (VerifiX — OAuth2/REST, JWKS-verified webhook callback, exponential backoff retry); AML/Sanctions Provider (real-time API + list delta feed, queue-and-replay retry); Bank/Payment Partner (HMAC-signed webhooks, idempotency enforcement, payout retry, daily reconciliation file); Custody/Wallet Provider (mTLS REST API, JWKS-verified deposit webhook, signing retry, real-time balance feed); Blockchain Node Provider (JSON-RPC/TLS, tx monitoring, fallback node retry); Email/SMS/MFA Provider (API key, SMS fallback retry); Regulatory output (goAML SAR submission, VARA portal filings, API authentication methods, signed report export). All retry and failure-handling paths shown per integration.</div>
+</div>
+
+</body>
+</html>
