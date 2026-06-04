@@ -250,7 +250,7 @@ flowchart TD
     TRADE["/trade — Select asset + enter AED or VA amount"]:::blue
     TRADE -->|"GET /trade/config"| CFG["Supabase Edge Functions — Trading / OTC Service, load config: spread 50 BPS, fees, min/max, approved asset list"]:::teal
     CFG --> INPUT["Customer enters trade — AED vs USDT / USDC / BTC / ETH"]:::teal
-    INPUT -->|"POST /trade/quote"| QSVC["[Liquidity Provider / Pricing API] — fetches LP price, applies 50 BPS spread + fee, returns quote + 30s TTL expiry"]:::teal
+    INPUT -->|"POST /trade/quote"| QSVC["Pricing Engine — fetches market price, applies 50 BPS spread + fee, returns quote + 30s TTL expiry"]:::teal
     QSVC --> QCARD["Quote card — price, amount, fee, 30s TTL expiry countdown"]:::teal
     QCARD -->|"Customer accepts within 30s TTL"| INIT["POST /trade/initiate"]:::teal
     INIT --> FA["2FA Challenge — TOTP"]:::teal
@@ -283,7 +283,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="added-note"><b>Added (minimal, append-only):</b> <b>Supabase Edge Functions</b> as backend Trading / OTC Service layer; <b>[Liquidity Provider / Pricing API]</b> node (LP price fetch, <b>50 BPS spread</b> applied); <b>30s TTL</b> on quote card; <b>Travel Rule Check</b> via [KYT / AML Provider] inserted between KYT screen and settlement; <b>DvP (Delivery vs Payment)</b> settlement model on both AED and VA legs; Order / Trade DB updated to Supabase PostgreSQL; Client Ledger (PostgreSQL) posting node; Trade Audit Log with 50 BPS fee recorded; Failure / Retry path.</div>
+  <div class="added-note"><b>Added (minimal, append-only):</b> <b>Supabase Edge Functions</b> as backend Trading / OTC Service layer; <b>Pricing Engine</b> node (market price fetch, <b>50 BPS spread</b> applied); <b>30s TTL</b> on quote card; <b>Travel Rule Check</b> via [KYT / AML Provider] inserted between KYT screen and settlement; <b>DvP (Delivery vs Payment)</b> settlement model on both AED and VA legs; Order / Trade DB updated to Supabase PostgreSQL; Client Ledger (PostgreSQL) posting node; Trade Audit Log with 50 BPS fee recorded; Failure / Retry path.</div>
 </div>
 
 <!-- ============================================================ -->
@@ -711,7 +711,7 @@ flowchart TD
         CUSTSVCT["Customer / Account Service"]:::teal
         KYCSVCT["KYC Service — VerifiX integration, doc orchestration"]:::teal
         AMLSVCT["KYT / AML Screening Service — [KYT / AML Provider] integration, real-time + batch, Travel Rule, rules engine"]:::teal
-        TRADESVCT["Trading / OTC Service — quote 30s TTL, 50 BPS spread, [Liquidity Provider] pricing, DvP settlement"]:::teal
+        TRADESVCT["Trading / OTC Service — quote 30s TTL, 50 BPS spread, DvP settlement"]:::teal
         DEPSVCT["Deposits Service — [Banking Partner] webhook, [Custody Provider] webhook, client deposit wallets, omnibus hot wallet sweep"]:::teal
         WDRSVCT["Withdrawals Service — approval workflow, payout orchestration"]:::teal
         TREASVCT["Treasury / Reconciliation Service — NLA, recon, safeguarding"]:::teal
@@ -736,7 +736,6 @@ flowchart TD
         AML_P["[KYT / AML Provider] — real-time KYT screen, sanctions list, Travel Rule FATF compliance"]:::purple
         BANK_P["[Banking Partner] — IBAN, IIAP Omnibus Account, inbound credit webhook, payout API"]:::purple
         CUST_P["[Custody Provider] — client deposit wallets, omnibus hot wallet, multi-sig signing, balance API"]:::purple
-        LIQ_P["[Liquidity Provider / Pricing API] — LP price feed, 50 BPS spread, 30s TTL quote"]:::purple
         CHAIN_P["Blockchain Node Provider — tx broadcast + on-chain confirmation"]:::purple
         COMM_P["Email / SMS / MFA Provider — OTP delivery, TOTP validation"]:::purple
         REG_P["Regulatory Output — goAML SAR portal, VARA filing portal"]:::purple
@@ -772,7 +771,6 @@ flowchart TD
 
     KYCSVCT <-->|"API"| KYC_P
     AMLSVCT <-->|"API"| AML_P
-    TRADESVCT <-->|"REST API"| LIQ_P
     DEPSVCT <-->|"Webhook / API"| BANK_P
     WDRSVCT <-->|"API"| BANK_P
     DEPSVCT <-->|"Webhook / API"| CUST_P
@@ -987,11 +985,6 @@ flowchart TD
         KYCRTY["KYC retry — on callback failure: exponential backoff, dead-letter queue"]:::teal
     end
 
-    subgraph LIQ_INT["Liquidity / Pricing Integration"]
-        LIQPROV["[Liquidity Provider / Pricing API] — LP price feed, 50 BPS spread applied, 30s TTL quote"]:::purple
-        LIQRTY["Pricing retry — on API timeout: use last-known price + flag for manual review"]:::teal
-    end
-
     subgraph AML_INT["KYT / AML / Sanctions Integration"]
         AMLPROV["[KYT / AML Provider] — real-time KYT screen API, sanctions list delta feed, Travel Rule FATF"]:::purple
         AMLFEED["List update feed — scheduled pull, version-controlled, applied atomically"]:::navy
@@ -1035,10 +1028,6 @@ flowchart TD
     KYCWH --> PLATFORM
     KYCPROV -->|"on failure"| KYCRTY
     KYCRTY --> PLATFORM
-
-    PLATFORM <-->|"REST API — API key, TLS"| LIQPROV
-    LIQPROV -->|"on timeout"| LIQRTY
-    LIQRTY --> PLATFORM
 
     PLATFORM <-->|"REST API — API key, TLS"| AMLPROV
     AMLPROV -->|"delta feed"| AMLFEED
