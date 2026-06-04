@@ -202,29 +202,27 @@ flowchart TD
 flowchart TD
     LOGIN["/login — Email + Password"]:::blue
     ADMIN["/admin/login"]:::amber
-    LOGIN -->|"POST /auth/login"| WAF["WAF — rate limiting, IP reputation, DDoS protection"]:::teal
+    LOGIN -->|"POST /auth/login"| WAF["Cloudflare WAF — rate limiting, IP reputation, DDoS protection"]:::teal
     ADMIN -->|"POST /auth/admin/login"| WAF
-    WAF --> APIGW["Supabase Edge Functions — JWT schema validation, request routing, serverless API layer"]:::teal
-    APIGW --> AUTHSVC["Supabase Auth — credential verification, JWT issuance, RBAC enforcement, OAuth2/OIDC"]:::teal
-    AUTHSVC --> USERDEC{"2FA enabled?"}:::amber
-    AUTHSVC --> ADMINDEC{"2FA mandatory"}:::amber
-    USERDEC -->|"No"| ISSAT["Issue accessToken in memory + Refresh in httpOnly cookie"]:::teal
-    USERDEC -->|"Yes"| MFA1["/login/2fa — TOTP authenticator code"]:::teal
-    MFA1 -->|"MFA Provider validates TOTP"| ISSAT
-    ADMINDEC -->|"POST /auth/admin/verify-2fa"| MFA2["/admin/2fa — TOTP"]:::teal
-    MFA2 -->|"MFA Provider validates TOTP"| ADMINTKN["Issue admin-scoped token — RBAC: admin role asserted"]:::teal
+    WAF --> APIGW["Supabase Edge Functions (Deno Runtime) — JWT schema validation, Token Bucket rate limiting, serverless API routing"]:::teal
+    APIGW --> AUTHSVC["Supabase Auth — bcrypt hash verification, credential check, OAuth2/OIDC"]:::teal
+    AUTHSVC --> BCRYPT["bcrypt hash verification — server-side, no plaintext stored"]:::navy
+    BCRYPT --> PARTIAL["Partial Session — awaiting MFA"]:::amber
+    PARTIAL --> MFA1["MFA Challenge — TOTP (authenticator app)"]:::teal
+    MFA1 -->|"Enter TOTP Code"| TOTP["Verify TOTP — time-based one-time password validated"]:::teal
+    TOTP -->|"MFA Verified"| RBACCHK["RBAC check — has_role() evaluated against PostgreSQL roles"]:::teal
+    RBACCHK -->|"Customer role"| ISSAT["Issue JWT (24h expiry) — stored httpOnly cookie"]:::teal
+    RBACCHK -->|"Admin role"| ADMINTKN["Issue admin-scoped token — RBAC: admin role asserted, elevated access"]:::teal
     ISSAT --> TSTORE["Supabase Auth — PostgreSQL-backed session store, JWT + refresh token metadata"]:::navy
     ADMINTKN --> TSTORE
-    ISSAT --> DASH["/dashboard — Session active, 15 min token"]:::teal
+    ISSAT --> DASH["/dashboard — Session active"]:::teal
     ADMINTKN --> ADMINDASH["/admin/dashboard"]:::teal
-    DASH -->|"Token expires"| INT["401 interceptor fires"]:::teal
-    ADMINDASH -->|"POST /auth/logout"| LOGOUT["Clear cookies — Blacklist token JTI — Audit log entry"]:::teal
-    INT -->|"POST /auth/refresh — cookie auto-sent"| REFDEC{"Refresh valid?"}:::amber
-    REFDEC -->|"Yes"| NEWTOK["New accessToken — resume session"]:::teal
-    REFDEC -->|"No"| REDIR["Redirect /login — Session log entry"]:::red
+    DASH -->|"Idle 30 min — auto logout"| IDLE["Idle Timeout — session invalidated, re-auth required"]:::red
+    DASH -->|"Absolute 24h — force logout"| ABS["Absolute Timeout — JWT expired, redirect /login"]:::red
+    ADMINDASH -->|"POST /auth/logout"| LOGOUT["Clear httpOnly cookie — Blacklist JWT JTI — Audit log entry"]:::teal
+    IDLE --> AL["Audit Log — session_timeout: type, IP, user-agent, timestamp"]:::navy
+    ABS --> AL
     LOGOUT --> AL["Audit Log — session_ended + token_revoked + IP + user-agent"]:::navy
-    NEWTOK --> TSTORE
-    REDIR --> AL
 
     classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
     classDef teal fill:#1AB089,color:#fff,stroke:#128C6A,stroke-width:2px
@@ -237,7 +235,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="added-note"><b>Added (minimal, append-only):</b> WAF layer (rate limiting, IP reputation, DDoS); <b>Supabase Edge Functions</b> as API / serverless routing layer; <b>Supabase Auth</b> (OAuth2/OIDC, JWT, RBAC enforcement); <b>Supabase Auth PostgreSQL-backed session store</b> replacing generic Redis token store reference; MFA Provider references for TOTP validation; RBAC admin-role assertion on admin token issuance; Audit Log node (session_ended, token_revoked, IP, user-agent).</div>
+  <div class="added-note"><b>Added (minimal, append-only):</b> <b>Cloudflare WAF</b> specifically named; <b>Supabase Edge Functions (Deno Runtime)</b> with <b>Token Bucket rate limiting</b>; <b>bcrypt hash verification</b> step (server-side, no plaintext); <b>Partial Session</b> node (awaiting MFA before full access); <b>TOTP MFA</b> (time-based one-time password, authenticator app); <b>RBAC has_role()</b> check against PostgreSQL roles; <b>JWT 24h expiry</b> stored httpOnly cookie; <b>Idle Timeout 30 min</b> and <b>Absolute Timeout 24h</b> session enforcement nodes; Audit Log entries for all timeout/logout events.</div>
 </div>
 
 <!-- ============================================================ -->
@@ -473,9 +471,50 @@ flowchart TD
   <h2>Journey 8: Treasury &amp; Client Asset Safeguarding</h2>
   <div class="mermaid">
 flowchart TD
+    subgraph KEYCTRL["Key Controls"]
+        direction TB
+        SEPD["Separation of Duties"]:::navy
+        NOSPC["No Single Point of Compromise"]:::navy
+        KEYGEN["Key Generation — Ceremony Witnessed"]:::navy
+        HWTOKEN["Hardware Tokens for Admin Access"]:::navy
+    end
+
+    subgraph KMS["Key Management Service (Supabase Vault)"]
+        direction TB
+        VAULT["Supabase Vault — AES-256 Encrypted Secrets storage"]:::navy
+        KEYROT["Key Rotation — 90-day cycle"]:::navy
+        KEYAUDIT["Key Access Audit Log — all access events logged"]:::navy
+    end
+
+    subgraph CUSTODY["Liminal Custody Architecture"]
+        direction TB
+        subgraph COLD["Cold Storage"]
+            direction TB
+            AIRGAP["Air-Gapped Key Generation"]:::navy
+            HSM["HSM-Protected signing"]:::navy
+            GEOSPLIT["Geographic Split — Key Shards across regions"]:::navy
+        end
+        subgraph HOT["Hot Wallet (Liminal)"]
+            direction TB
+            MULTISIG["Multi-Sig 2-of-3 Approvers required"]:::teal
+            DAILYLIM["Daily Limit — AED 500K per day"]:::amber
+            AUTOSWEEP["Auto-Sweep to Cold storage — on threshold breach"]:::teal
+        end
+    end
+
+    subgraph TXSIGN["Transaction Signing"]
+        direction TB
+        APPROVED["Trade Approved by Compliance"]:::teal
+        COMPCHK["Compliance Check — KYT + Travel Rule passed"]:::teal
+        AMTCHK{"Amount > Threshold?"}:::amber
+        MULTIREQ["Multi-Sig Required — 2-of-3 Approvers sign"]:::teal
+        SINGLESIG["Single-Sig — Auto-Approve below threshold"]:::teal
+        BROADCAST["Sign & Broadcast — on-chain transaction submitted"]:::green
+    end
+
     TREAS["/admin/treasury — Dashboard: all balances + NLA"]:::amber
-    TREAS -->|"GET /treasury/dashboard"| DASH["Show: Client AED segregated, Client VA custodian, Firm capital, NLA ratio, Reserve assets"]:::teal
-    DASH --> ACTDEC{"Action?"}:::amber
+    TREAS -->|"GET /treasury/dashboard"| DASH2["Show: Client AED (Zand), Client VA (Liminal), Firm capital, NLA ratio, Hot/Cold wallet split"]:::teal
+    DASH2 --> ACTDEC{"Action?"}:::amber
     ACTDEC -->|"Daily NLA check"| NLACHK["GET /treasury/nla — Net Liquid Assets check"]:::teal
     ACTDEC -->|"Reconciliation"| RECON["POST /treasury/reconciliation — Daily Reconciliation Engine, triggered 00:00 UTC"]:::teal
     ACTDEC -->|"Emergency freeze"| EMERG["POST /treasury/emergency-freeze — Halt all deposits / withdrawals / trades"]:::red
@@ -484,7 +523,7 @@ flowchart TD
     NLADEC -->|"Yes"| NLASO["Automated sign-off — Board report entry"]:::teal
     NLADEC -->|"No — below buffer"| NLAAL["Alert: CFO + MLRO + Board — Contingency plan triggered"]:::red
     RECON --> BANKFEED["Zand Bank PJSC Balance Feed — AED bank statement, fetched at 00:00 UTC"]:::navy
-    RECON --> CUSTFEED["Liminal Custody Balance Feed — BTC custody, ETH custody, USDT custody balances, real-time API"]:::navy
+    RECON --> CUSTFEED["Liminal Custody Balance Feed — BTC, ETH, USDT custody balances via real-time API"]:::navy
     BANKFEED --> CLEDGER["Client Ledger Comparison — PostgreSQL: AED Bank vs BTC vs ETH vs USDT vs Client Total vs internal ledger"]:::teal
     CUSTFEED --> CLEDGER
     CLEDGER --> DISCDEC{"Discrepancy?"}:::amber
@@ -493,8 +532,13 @@ flowchart TD
     EXCEPT --> SAFEV["Safeguarding Evidence Store — reconciliation report + exception docs stored"]:::navy
     AUTOSO --> RECAL["Reconciliation Audit Trail — recon_id, timestamp, values, sign-off recorded"]:::navy
     SAFEV --> RECAL
-    EMERG --> OPS["Operations suspended — Notification required"]:::red
-    CLIVC -->|"POST /accounts"| RESUME["Resume — audit log entry"]:::teal
+
+    APPROVED --> COMPCHK
+    COMPCHK --> AMTCHK
+    AMTCHK -->|"Yes"| MULTIREQ
+    AMTCHK -->|"No"| SINGLESIG
+    MULTIREQ --> BROADCAST
+    SINGLESIG --> BROADCAST
 
     classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
     classDef teal fill:#1AB089,color:#fff,stroke:#128C6A,stroke-width:2px
@@ -507,7 +551,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="added-note"><b>Added (minimal, append-only):</b> <b>00:00 UTC</b> daily reconciliation trigger; <b>Zand Bank PJSC Balance Feed</b> (AED bank statement); <b>Liminal Custody Balance Feed</b> broken out as <b>BTC, ETH, USDT</b> custody balances; Client Ledger Comparison updated to show all asset types (AED Bank, BTC, ETH, USDT, Client Total) vs internal PostgreSQL ledger; Exception management, Safeguarding Evidence Store, and Reconciliation Audit Trail nodes retained. All provider names generic.</div>
+  <div class="added-note"><b>Added (Nexus architecture integration):</b> <b>Key Controls</b> subgraph (Separation of Duties, No Single Point of Compromise, Witnessed Key Generation, Hardware Tokens); <b>Supabase Vault KMS</b> (AES-256 encrypted secrets, <b>90-day key rotation</b>, Key Access Audit Log); <b>Liminal Cold Storage</b> (Air-Gapped Key Gen, HSM-Protected, Geographic Split Key Shards); <b>Liminal Hot Wallet</b> (<b>Multi-Sig 2-of-3</b>, <b>AED 500K daily limit</b>, Auto-Sweep to Cold); <b>Transaction Signing</b> flow (amount threshold check → Multi-Sig 2-of-3 or Single-Sig Auto-Approve → Sign & Broadcast); 00:00 UTC daily reconciliation retained.</div>
 </div>
 
 <!-- ============================================================ -->
@@ -694,92 +738,94 @@ flowchart LR
   <h2>Diagram 12: Technical Architecture <span class="badge">NEW</span></h2>
   <div class="mermaid">
 flowchart LR
-    subgraph CLIENT["Client Tier"]
+    subgraph CLIENT["Client Layer"]
         direction TB
-        WEB["Web / Mobile Frontend — React SPA, iOS, Android"]:::blue
-        ADMPORT["Admin Portal — internal staff browser client"]:::amber
+        WEB["Web Portal — React + TypeScript"]:::blue
+        MOBILE["Mobile Web — Responsive PWA"]:::blue
+        ADMPORT["Admin Console — internal staff portal"]:::amber
     end
 
-    subgraph EDGE["Edge + Gateway Tier"]
-        WAFEDGE["WAF — DDoS, OWASP rule-set, bot protection"]:::teal
-        APIGWT["Supabase Edge Functions — serverless functions, routing, JWT validation, rate limiting, TLS termination"]:::teal
-        AUTHSVCT["Supabase Auth — OAuth2 / OIDC, JWT, MFA, RBAC, PostgreSQL-backed session store"]:::teal
-    end
-
-    subgraph APP["Application Services Tier"]
+    subgraph SECURITY["Security Controls"]
         direction TB
-        CUSTSVCT["Customer / Account Service"]:::teal
-        KYCSVCT["KYC Service — VerifiX integration, doc orchestration"]:::teal
-        AMLSVCT["KYT / AML Screening Service — VerifiX KYT + VerifiX — real-time + batch, Travel Rule, rules engine"]:::teal
-        TRADESVCT["Trading / OTC Service — quote 30s TTL, 50 BPS spread, DvP settlement"]:::teal
-        DEPSVCT["Deposits Service — Zand Bank PJSC webhook, Liminal Custody webhook, client deposit wallets, omnibus hot wallet sweep"]:::teal
-        WDRSVCT["Withdrawals Service — approval workflow, payout orchestration"]:::teal
-        TREASVCT["Treasury / Reconciliation Service — NLA, recon, safeguarding"]:::teal
-        REPSVCT["Reporting Service — BI aggregation, MLRO dashboard feed"]:::teal
+        WAFSEC["WAF Protection — OWASP rule-set"]:::red
+        DDOS["DDoS Mitigation — Cloudflare CDN"]:::red
+        ENCR["AES-256 + TLS 1.3 — encryption in transit and at rest"]:::red
+        RBAC2["Role-Based Access Control — has_role() PostgreSQL enforcement"]:::red
     end
 
-    subgraph DATA["Data Tier"]
+    subgraph EDGE["API Gateway (Supabase Edge Functions)"]
         direction TB
-        CUSTDBT["Customer Profile DB — Supabase PostgreSQL, AES-256 encrypted, PII"]:::navy
-        KYCDSTT["KYC Document Store — Supabase Storage / object storage, AES-256, versioned"]:::navy
-        TRADEDB["Order / Trade DB — Supabase PostgreSQL, immutable trade records"]:::navy
-        AMLCDT["Compliance Case Store — case, alert, disposition records"]:::navy
-        LEDGERT["Client Ledger — double-entry accounting, append-only"]:::navy
-        CUSTODYT["Wallet / Custody Records — custody provider mirror DB"]:::navy
-        AUDITLOGT["Audit Log — WORM / append-only, all system events"]:::navy
-        CDMT["Compliance Data Mart — read replica + aggregation layer"]:::navy
+        AUTHSVC2["Supabase Auth — JWT + TOTP MFA, bcrypt hash, OAuth2/OIDC"]:::teal
+        RATELIM["Rate Limiter — Token Bucket algorithm"]:::teal
+        EDGEFN["Edge Functions — 1 deployed, Deno Runtime, serverless routing"]:::teal
     end
 
-    subgraph EXT["External Integrations"]
+    subgraph CORESVCS["Core Services"]
         direction TB
-        VERIFX_P["VerifiX — KYC identity verification, KYT transaction monitoring, on-chain blockchain analytics, wallet screening, sanctions list, Travel Rule FATF"]:::purple
-        BANK_P["Zand Bank PJSC — IBAN, IIAP Omnibus Account, inbound credit webhook, payout API"]:::purple
-        CUST_P["Liminal Custody — client deposit wallets, omnibus hot wallet, multi-sig signing, balance API"]:::purple
-        CHAIN_P["Blockchain Node Provider — tx broadcast + on-chain confirmation"]:::purple
-        COMM_P["Email / SMS / MFA Provider — OTP delivery, TOTP validation"]:::purple
-        REG_P["Regulatory Output — goAML SAR portal, VARA filing portal"]:::purple
+        USERPROF["User & Profile Management"]:::teal
+        OTCTRADE["OTC Trade Engine — quote 50 BPS spread, 30s TTL"]:::teal
+        QUOTEGEN["Quote Generation — Pricing Engine integration"]:::teal
+        SETTLSVC["Settlement Service — DvP model (AED + VA simultaneous)"]:::teal
+        COMPENG["Compliance Engine — KYT + Travel Rule + AML rules"]:::teal
+        AUDITLOG2["Audit & Logging — WORM append-only, 8-year retention"]:::teal
     end
 
-    WEB -->|"HTTPS"| WAFEDGE
-    ADMPORT -->|"HTTPS + VPN/PAG"| WAFEDGE
-    WAFEDGE --> APIGWT
-    APIGWT --> AUTHSVCT
-    APIGWT --> CUSTSVCT
-    APIGWT --> KYCSVCT
-    APIGWT --> AMLSVCT
-    APIGWT --> TRADESVCT
-    APIGWT --> DEPSVCT
-    APIGWT --> WDRSVCT
-    APIGWT --> TREASVCT
-    APIGWT --> REPSVCT
+    subgraph COMPLIANCE["Compliance Suite"]
+        direction TB
+        KYCV["KYC Verification — VerifiX (identity + liveness + document)"]:::purple
+        KYTMON["KYT Transaction Monitoring — VerifiX (on-chain + off-chain)"]:::purple
+        AMLCFT["AML/CFT Screening — VerifiX (sanctions OFAC/UN/EU/UAE + PEP)"]:::purple
+        PEPCHR["PEP Screening — VerifiX"]:::purple
+        TRVL2["Travel Rule Compliance — VerifiX (FATF/VARA compliant)"]:::purple
+    end
 
-    CUSTSVCT --- CUSTDBT
-    KYCSVCT --- KYCDSTT
-    KYCSVCT --- CUSTDBT
-    AMLSVCT --- AMLCDT
-    TRADESVCT --- TRADEDB
-    TRADESVCT --- LEDGERT
-    DEPSVCT --- LEDGERT
-    DEPSVCT --- CUSTODYT
-    WDRSVCT --- LEDGERT
-    WDRSVCT --- CUSTODYT
-    TREASVCT --- LEDGERT
-    TREASVCT --- CUSTODYT
-    REPSVCT --- CDMT
-    AUDITLOGT --- CDMT
+    subgraph EXT2["External Integrations"]
+        direction TB
+        LIMINAL2["Liminal Custody — VARA-Approved, MPC wallets, multi-sig 2-of-3, AED 500K daily hot wallet limit"]:::purple
+        ZAND2["Zand Bank PJSC — AED Settlement, IIAP Omnibus Account, CBUAE-Regulated"]:::purple
+        PRICENG["Pricing Engine — internal market data feed, 50 BPS spread applied"]:::purple
+        ESCROW["Ethereum Sepolia — Escrow Testnet (VA-to-VA swap testing)"]:::orange
+    end
 
-    KYCSVCT <-->|"API"| VERIFX_P
-    AMLSVCT <-->|"API"| VERIFX_P
-    WDRSVCT <-->|"Travel Rule API"| VERIFX_P
-    DEPSVCT <-->|"on-chain screening"| VERIFX_P
-    DEPSVCT <-->|"Webhook / API"| BANK_P
-    WDRSVCT <-->|"API"| BANK_P
-    DEPSVCT <-->|"Webhook / API"| CUST_P
-    WDRSVCT <-->|"API"| CUST_P
-    DEPSVCT <-->|"RPC"| CHAIN_P
-    WDRSVCT <-->|"RPC"| CHAIN_P
-    AUTHSVCT <-->|"API"| COMM_P
-    REPSVCT <-->|"Export"| REG_P
+    subgraph DATA2["Data Layer"]
+        direction TB
+        PGDB["PostgreSQL — 54 Tables + Row-Level Security (RLS)"]:::navy
+        OBJST2["Object Storage — KYC documents, WORM archive (8 years)"]:::navy
+        SECVAULT["Secrets Vault — Supabase Vault, API Keys, 90-day rotation"]:::navy
+    end
+
+    WEB -->|"HTTPS"| WAFSEC
+    MOBILE -->|"HTTPS"| WAFSEC
+    ADMPORT -->|"HTTPS + MFA"| WAFSEC
+    WAFSEC --> DDOS
+    DDOS --> AUTHSVC2
+    AUTHSVC2 --> RATELIM
+    RATELIM --> EDGEFN
+    EDGEFN --> USERPROF
+    EDGEFN --> OTCTRADE
+    EDGEFN --> QUOTEGEN
+    EDGEFN --> SETTLSVC
+    EDGEFN --> COMPENG
+    EDGEFN --> AUDITLOG2
+
+    COMPENG <-->|"API"| KYCV
+    COMPENG <-->|"API"| KYTMON
+    COMPENG <-->|"API"| AMLCFT
+    COMPENG <-->|"API"| PEPCHR
+    COMPENG <-->|"API"| TRVL2
+
+    SETTLSVC <-->|"API mTLS"| LIMINAL2
+    SETTLSVC <-->|"Webhook/API"| ZAND2
+    QUOTEGEN <-->|"Internal feed"| PRICENG
+    SETTLSVC <-->|"RPC"| ESCROW
+
+    USERPROF --- PGDB
+    OTCTRADE --- PGDB
+    SETTLSVC --- PGDB
+    COMPENG --- PGDB
+    AUDITLOG2 --- PGDB
+    COMPENG --- OBJST2
+    EDGEFN --- SECVAULT
 
     classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
     classDef teal fill:#1AB089,color:#fff,stroke:#128C6A,stroke-width:2px
@@ -792,7 +838,7 @@ flowchart LR
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="new-note"><b>New diagram — Technical Architecture:</b> Layered system architecture across five tiers: Client (web/mobile frontend, admin portal), Edge/Gateway (WAF, API Gateway, Auth/Session Service), Application Services (8 microservices), Data Tier (8 stores including audit log and compliance data mart), and External Integrations (KYC provider, AML provider, bank/payment partner, custody/wallet provider, blockchain node, email/SMS/MFA, regulatory output). All service-to-data and service-to-external connections shown with protocol labels.</div>
+  <div class="new-note"><b>Updated (Nexus architecture integration — Diagram 12):</b> Precisely mapped to Nexus System Architecture: <b>Client Layer</b> (React + TypeScript Web Portal, Mobile PWA Responsive); <b>Security Controls</b> (WAF Protection, Cloudflare CDN DDoS Mitigation, AES-256 + TLS 1.3, RBAC has_role()); <b>API Gateway</b> (Supabase Auth JWT+TOTP MFA, Token Bucket Rate Limiter, Edge Functions Deno Runtime — 1 deployed); <b>Core Services</b> (User Profile, OTC Trade Engine 50BPS/30s, Quote Generation, Settlement DvP, Compliance Engine, Audit+Logging WORM 8yr); <b>Compliance Suite</b> (VerifiX for KYC/KYT/AML-CFT/PEP/Travel Rule); <b>External Integrations</b> (Liminal multi-sig 2-of-3 AED 500K daily limit, Zand Bank PJSC IIAP Omnibus, Pricing Engine internal, Ethereum Sepolia testnet); <b>Data Layer</b> (PostgreSQL 54 Tables + RLS, Object Storage WORM 8yr, Supabase Vault Secrets 90-day rotation).</div>
 </div>
 
 <!-- ============================================================ -->
@@ -804,68 +850,89 @@ flowchart LR
 flowchart TD
     INET["Internet — Customer / Public Access"]:::blue
 
-    subgraph EDGE_ZONE["Edge Zone — Internet-facing"]
-        WAFSEC["WAF — OWASP Top-10 rule-set, DDoS protection, bot filtering, geo-blocking"]:::teal
-        FW1["Firewall Layer 1 — stateful packet inspection, ingress rules"]:::red
+    subgraph L1["Layer 1: Perimeter Security"]
+        direction TB
+        CDN["Cloudflare CDN — DDoS mitigation, geo-blocking, bot filtering"]:::red
+        WAFL1["WAF — OWASP Top-10 rule-set, bot filtering, IP reputation"]:::red
+        TLS13["TLS 1.3 — all traffic encrypted in transit"]:::red
     end
 
-    subgraph PUBLIC_SUBNET["Public Subnet — DMZ"]
-        APIGWSEC["API Gateway — TLS 1.2+ termination, JWT validation, rate limiting, CORS policy"]:::teal
-        LBAL["Load Balancer — health check, failover routing, SSL passthrough"]:::teal
+    subgraph L2["Layer 2: Authentication"]
+        direction TB
+        SUPAAUTH["Supabase Auth — JWT tokens, OAuth2/OIDC"]:::teal
+        TOTPMFA["TOTP MFA — authenticator app, mandatory for all users"]:::teal
+        SESSION["24h Session — idle 30min timeout, absolute 24h timeout"]:::teal
+        RBACLYR["RBAC — has_role() PostgreSQL enforcement, least privilege"]:::teal
     end
 
-    subgraph PRIVATE_SUBNET["Private Subnet — Application Tier"]
-        APPSVCS["Application Services — containerised microservices, no direct internet access"]:::teal
-        AUTHSEC["Auth / Session Service — OAuth2/OIDC, MFA enforcement, RBAC policy engine"]:::teal
+    subgraph L3["Layer 3: Application"]
+        direction TB
+        RLS54["RLS Policies — 54 Tables, Row-Level Security enforced"]:::teal
+        RATELIM2["Rate Limiting — Token Bucket algorithm, per-user + per-IP"]:::teal
+        INPUTVAL["Input Validation — schema validation, sanitisation on all API inputs"]:::teal
+        AUDITLG3["Audit Logs — all actions logged: Actor ID + Role + IP + Device + Timestamp"]:::navy
     end
 
-    subgraph DB_SUBNET["Database Tier — Isolated Subnet"]
-        DBS["Databases — PostgreSQL, encrypted at rest AES-256, TLS in-transit"]:::navy
-        OBJSTO["Object / Document Storage — AES-256, versioning, access-logged"]:::navy
-        AUDLOG["Audit Log — WORM, append-only, tamper-evident"]:::navy
+    subgraph L4["Data Security"]
+        direction TB
+        AES256["AES-256 at Rest — all PostgreSQL tables + Object Storage"]:::navy
+        TLSINT["TLS in Transit — internal service-to-service communications"]:::navy
+        SECVAULT2["Secrets Vault — Supabase Vault, API keys encrypted, 90-day rotation"]:::navy
+        DBBACK2["Daily Backups — Point-in-Time recovery, Cross-Region Replication"]:::navy
     end
 
-    subgraph KEYMGMT["Key Management + Secrets"]
-        KMS["KMS / HSM — master key hierarchy, envelope encryption, key rotation"]:::navy
-        SECMGR["Secrets Manager — API keys, DB credentials, rotated automatically"]:::navy
+    subgraph L5["Layer 5: Monitoring"]
+        direction TB
+        SIEM2["SIEM — centralised log aggregation, correlation rules, real-time alerting"]:::purple
+        ALERTS["Alerts — anomaly detection, threshold breach notifications, ops channel"]:::purple
+        HEALTHCHK["Health Checks — API gateway, DB, custody provider, bank connectivity"]:::purple
     end
 
-    subgraph ADMIN_PATH["Admin Access Path"]
-        VPN["VPN / Bastion / Privileged Access Gateway — MFA required, session recorded"]:::amber
-        FW2["Firewall Layer 2 — admin source IP restriction, least-privilege rules"]:::red
-        ADMINCONS["Admin Console — RBAC, read-only audit trail of all actions"]:::amber
+    subgraph DATACLASS["Data Classification (VARA Rule I.B.3.b)"]
+        direction TB
+        PUBLIC["PUBLIC — Asset Prices, Fee Schedules, Platform Status"]:::green
+        INTERNAL["INTERNAL (Staff Only) — Trade Volumes, System Metrics, Audit Reports"]:::teal
+        CONFID["CONFIDENTIAL (Role-Based) — Client PII, KYC Documents, Bank Details, Trade History"]:::amber
+        RESTRIC["RESTRICTED (Need-to-Know) — Private Keys, API Secrets, Compliance Alerts, SAR Reports"]:::red
     end
 
-    subgraph MONITORING["Security Monitoring + Logging"]
-        SIEM["SIEM — centralised log aggregation, correlation rules, alerting"]:::purple
-        SECMON["Security Monitoring — real-time anomaly detection, IDS/IPS"]:::purple
-        LOGSHIP["Log Shipping — all service logs forwarded to SIEM, tamper-evident"]:::purple
+    subgraph VULNMGMT["Vulnerability Management (VARA Rule I.E)"]
+        direction TB
+        DISCOVERY["Discovery — Weekly automated scans, npm audit, Bi-annual pen test, Bug bounty"]:::teal
+        CVSS["CVSS Scoring — Critical 9.0+: fix 24h · High 7.0-8.9: fix 7d · Medium: fix 30d · Low: fix 90d"]:::amber
+        REMEDIATE["Remediation — Patch → Security Review → Staging → Production deploy"]:::teal
+        VARAREPORT["VARA Reporting — Monthly vuln summary, Critical incident 24h, Annual pen test report"]:::purple
     end
 
-    INET --> WAFSEC
-    WAFSEC --> FW1
-    FW1 --> APIGWSEC
-    FW1 --> LBAL
-    APIGWSEC --> APPSVCS
-    LBAL --> APPSVCS
-    APPSVCS --> AUTHSEC
-    APPSVCS -->|"TLS in-transit"| DBS
-    APPSVCS -->|"TLS in-transit"| OBJSTO
-    APPSVCS -->|"append events"| AUDLOG
-    DBS -->|"envelope encrypt"| KMS
-    OBJSTO -->|"envelope encrypt"| KMS
-    APPSVCS -->|"fetch secrets"| SECMGR
+    subgraph INCIDENT["Incident Response (5-Phase)"]
+        direction TB
+        I1["1. IDENTIFY — Detect + Classify + Notify SIRT"]:::orange
+        I2["2. CONTAIN — Isolate + Preserve Evidence"]:::orange
+        I3["3. ERADICATE — Root Cause + Remove Threat"]:::orange
+        I4["4. RECOVER — Test + Restore services"]:::orange
+        I5["5. LEARN — Review + Report to VARA"]:::orange
+    end
 
-    INET -->|"VPN tunnel"| VPN
-    VPN --> FW2
-    FW2 --> ADMINCONS
-    ADMINCONS -->|"RBAC-gated"| APPSVCS
+    INET --> CDN
+    CDN --> WAFL1
+    WAFL1 --> TLS13
+    TLS13 --> SUPAAUTH
+    SUPAAUTH --> TOTPMFA
+    TOTPMFA --> SESSION
+    SESSION --> RBACLYR
+    RBACLYR --> RLS54
+    RLS54 --> RATELIM2
+    RATELIM2 --> INPUTVAL
+    INPUTVAL --> AUDITLG3
+    AUDITLG3 --> AES256
+    AES256 --> TLSINT
+    TLSINT --> SECVAULT2
+    SECVAULT2 --> DBBACK2
+    DBBACK2 --> SIEM2
+    SIEM2 --> ALERTS
+    ALERTS --> HEALTHCHK
 
-    APPSVCS --> LOGSHIP
-    DBS --> LOGSHIP
-    AUDLOG --> LOGSHIP
-    LOGSHIP --> SIEM
-    SIEM --> SECMON
+    AUDITLG3 --> SIEM2
 
     classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
     classDef teal fill:#1AB089,color:#fff,stroke:#128C6A,stroke-width:2px
@@ -878,7 +945,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="new-note"><b>New diagram — Network &amp; Security Architecture:</b> Covers internet/customer access → WAF → Firewall Layer 1 → Public Subnet (API Gateway, Load Balancer with TLS termination) → Private Subnet (application services, auth/session service with RBAC) → Database Tier (isolated subnet, AES-256 at rest, TLS in-transit) → Key Management (KMS/HSM, envelope encryption, key rotation) → Secrets Management → Admin access path (VPN/Bastion/Privileged Access Gateway with MFA, Firewall Layer 2, Admin Console with RBAC) → Security Monitoring (SIEM, IDS/IPS, log shipping to tamper-evident store). Encryption in transit (TLS) and at rest (AES-256/KMS) labelled on all relevant edges.</div>
+  <div class="new-note"><b>Updated (Nexus architecture integration — Diagram 13):</b> Restructured as <b>5-Layer Defence-in-Depth</b> (Perimeter, Authentication, Application, Data, Monitoring); <b>Cloudflare CDN</b> specifically named (DDoS, geo-blocking, bot filtering); Layer 2 Authentication: Supabase Auth JWT, TOTP MFA, idle 30min/absolute 24h sessions, RBAC has_role(); Layer 3 Application: RLS 54 Tables, Token Bucket rate limiting, input validation, enriched audit logs (Actor ID+Role+IP+Device+Timestamp); Layer 4 Data: AES-256 at rest, TLS in transit, Supabase Vault 90-day rotation, daily point-in-time backup + cross-region replication; Layer 5 Monitoring: SIEM, anomaly detection, health checks; <b>Data Classification framework</b> (Public/Internal/Confidential/Restricted per VARA Rule I.B.3.b); <b>Vulnerability Management</b> (CVSS SLAs: Critical 24h, High 7d, Medium 30d, Low 90d; VARA reporting); <b>Incident Response</b> 5-phase (Identify→Contain→Eradicate→Recover→Learn ending with VARA report).</div>
 </div>
 
 <!-- ============================================================ -->
@@ -888,74 +955,65 @@ flowchart TD
   <h2>Diagram 14: Redundancy, Failover &amp; Disaster Recovery <span class="badge">NEW</span></h2>
   <div class="mermaid">
 flowchart LR
-    subgraph PRIMARY["Primary Production Environment — AZ-A"]
+    subgraph PRIMARY["Primary Site — Supabase Cloud (AZ-A)"]
         direction TB
-        PAPIGW["API Gateway — active"]:::teal
-        PAPP["Application Services — active replicas"]:::teal
-        PDB["Primary DB — PostgreSQL, synchronous replication"]:::navy
-        POBJ["Object Storage — primary bucket"]:::navy
-        PAUDIT["Audit Log — primary WORM store"]:::navy
+        PAPIGW["API Gateway — Supabase Edge Functions (Deno Runtime) — active"]:::teal
+        PAPP["Application Services — Core Services, Compliance Engine — active"]:::teal
+        PDB["Supabase Cloud — PostgreSQL (54 Tables + RLS) — primary"]:::navy
+        POBJ["Object Storage — Documents, KYC records — primary bucket"]:::navy
+        PAUDIT["Audit Log — WORM append-only — primary store"]:::navy
     end
 
-    subgraph SECONDARY["Secondary / Standby Environment — AZ-B"]
+    subgraph DR_SITE["Disaster Recovery Site (AZ-B)"]
         direction TB
         SAPIGW["API Gateway — warm standby"]:::teal
         SAPP["Application Services — scaled-down standby"]:::teal
-        SDB["Standby DB — synchronous replica, auto-promote on failure"]:::navy
-        SOBJ["Object Storage — replicated bucket — geo-redundant"]:::navy
+        SDB["PostgreSQL — daily Point-in-Time backup, Cross-Region Replication"]:::navy
+        SOBJ["Object Storage — Storage Replication — geo-redundant"]:::navy
         SAUDIT["Audit Log — replicated WORM store"]:::navy
     end
 
-    subgraph BACKUP["Backup + Retention"]
+    subgraph BCP["Business Continuity Plan"]
         direction TB
-        DBBACK["Database Backups — daily full + continuous WAL archiving — 90-day retention"]:::navy
-        OBJBACK["Object / Document Storage Backups — versioned, cross-region copy — 7-year retention"]:::navy
-        AUDRET["Audit Log Retention — WORM, immutable, minimum 7-year VARA requirement"]:::navy
+        RTO["RTO: 4 hours — recovery time objective"]:::orange
+        RPO["RPO: 1 hour — recovery point objective"]:::orange
+        DRTEST["Annual DR Test — full failover exercise"]:::teal
+        BCPREVIEW["Quarterly BCP Review — board-level sign-off"]:::teal
     end
 
-    subgraph MONITOR["Monitoring + Alerting"]
-        MMON["Monitoring — health checks, latency, error rate, saturation metrics"]:::purple
-        ALERT["Alerting — PagerDuty / ops channel, SLA breach triggers"]:::purple
+    subgraph RECOVERY_PRI["Recovery Priority Order"]
+        direction TB
+        P1["P1: Auth + Database — Supabase Auth + PostgreSQL restored first"]:::red
+        P2["P2: Trade Engine — OTC Trade, Quote, Settlement services"]:::orange
+        P3["P3: Compliance Suite — VerifiX integrations, AML screening"]:::amber
+        P4["P4: Admin Panels — MLRO dashboard, admin console"]:::teal
     end
 
-    subgraph FAILOVER["Failover Routing"]
-        DNS["DNS / Traffic Manager — health-based failover routing, RPO-aware"]:::amber
-        FOD{"Failover decision"}:::amber
+    subgraph FAILOVER["Failover Sequence"]
+        direction TB
+        DETECT["1. Detect Outage — Health Checks trigger alert"]:::amber
+        ACTIVATE["2. Activate DR Site — standby environment promoted"]:::teal
+        DNS2["3. DNS Failover — &lt; 5 minutes switchover"]:::teal
+        RESTORE["4. Restore Services — P1 → P2 → P3 → P4 order"]:::teal
+        VERIFY["5. Verify Data Integrity — reconciliation checks"]:::teal
+        RESUME["6. Resume Operations — normal traffic restored"]:::green
     end
 
-    subgraph DR["DR Restore Process"]
-        DRPLAN["DR Runbook — RTO target: 4hr, RPO target: 15min"]:::orange
-        DBREST["DB Restore — promote standby or restore from backup WAL"]:::teal
-        CUSTREC["Custody / Key Recovery — HSM key ceremony, custody provider coordination"]:::teal
-        VALTEST["Validation + Smoke Test — data integrity check, functional test suite"]:::teal
-        DRCOMP["DR Complete — services resumed, incident report filed"]:::green
-    end
+    PDB -->|"Cross-Region Replication"| SDB
+    POBJ -->|"Storage Replication"| SOBJ
+    PAUDIT -->|"Replication"| SAUDIT
 
-    PDB -->|"sync replication"| SDB
-    POBJ -->|"geo-replication"| SOBJ
-    PAUDIT -->|"replication"| SAUDIT
+    DETECT --> ACTIVATE
+    ACTIVATE --> DNS2
+    DNS2 --> RESTORE
+    RESTORE --> P1
+    P1 --> P2
+    P2 --> P3
+    P3 --> P4
+    P4 --> VERIFY
+    VERIFY --> RESUME
 
-    PDB -->|"WAL archive"| DBBACK
-    POBJ -->|"versioned copy"| OBJBACK
-    PAUDIT -->|"immutable copy"| AUDRET
-
-    PAPP --> MMON
-    PDB --> MMON
-    SAPP --> MMON
-    SDB --> MMON
-    MMON --> ALERT
-    ALERT --> FOD
-
-    DNS --> PAPIGW
-    DNS -->|"failover"| SAPIGW
-    FOD -->|"Primary healthy"| DNS
-    FOD -->|"Primary degraded"| DRPLAN
-
-    DRPLAN --> DBREST
-    DBREST --> CUSTREC
-    CUSTREC --> VALTEST
-    VALTEST --> DRCOMP
-    DRCOMP -->|"restore traffic"| DNS
+    RESUME -->|"Traffic restored"| PAPIGW
 
     classDef blue fill:#4472C4,color:#fff,stroke:#2E5BA7,stroke-width:2px
     classDef teal fill:#1AB089,color:#fff,stroke:#128C6A,stroke-width:2px
@@ -968,7 +1026,7 @@ flowchart LR
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="new-note"><b>New diagram — Redundancy, Failover &amp; DR:</b> Shows Primary Production Environment (AZ-A) and Secondary/Standby Environment (AZ-B) with synchronous DB replication and geo-replicated object storage and audit log. Backup tier covers database (daily full + continuous WAL, 90-day retention), object storage (versioned cross-region, 7-year retention), and audit log (WORM immutable, 7-year VARA requirement). Monitoring and alerting feed into failover decision. DNS/Traffic Manager provides health-based failover routing. DR Restore Process includes runbook (RTO 4hr / RPO 15min placeholders), DB restore path, Custody/Key Recovery (HSM key ceremony), validation, and smoke test before traffic restoration.</div>
+  <div class="new-note"><b>Updated (Nexus BCDR integration — Diagram 14):</b> <b>Primary Site</b> named as Supabase Cloud with Edge Functions (Deno Runtime), PostgreSQL, Object Storage, WORM Audit Log; <b>DR Site</b> (AZ-B) with daily Point-in-Time backups, Cross-Region Replication, Storage Replication; <b>Business Continuity Plan</b>: <b>RTO 4 hours</b>, <b>RPO 1 hour</b>, Annual DR Test, Quarterly BCP Review; <b>Recovery Priority</b>: P1 Auth+Database → P2 Trade Engine → P3 Compliance Suite → P4 Admin Panels; <b>Failover Sequence</b>: Detect Outage → Activate DR Site → <b>DNS Failover &lt; 5 minutes</b> → Restore Services (P1→P4 order) → Verify Data Integrity → Resume Operations.</div>
 </div>
 
 <!-- ============================================================ -->
