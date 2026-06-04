@@ -258,7 +258,7 @@ flowchart TD
     ATOM --> TRADDB["Order / Trade DB — PostgreSQL, trade record created, status: PENDING"]:::navy
     ATOM --> KYT{"KYT Screen — VerifiX transaction monitoring"}:::amber
     KYT -->|"Risk = High"| HALT["Halt — Block and Flag, MLRO escalation"]:::red
-    KYT -->|"Risk = Low / Medium"| TRVL["Travel Rule Check — [Blockchain Analytics Provider] — counterparty wallet screening, FATF compliance"]:::teal
+    KYT -->|"Risk = Low / Medium"| TRVL["Travel Rule Check — VerifiX — counterparty wallet screening, FATF compliance"]:::teal
     TRVL -->|"Compliant"| PROC["Trade PROCESSING — DvP Settlement initiated"]:::teal
     PROC -->|"AED leg — DvP"| BANK["Zand Bank PJSC — AED settlement leg, DvP simultaneous transfer"]:::teal
     PROC -->|"VA leg — DvP"| CUST["Liminal Custody — VA settlement leg, DvP simultaneous transfer"]:::teal
@@ -283,7 +283,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="added-note"><b>Added (minimal, append-only):</b> <b>Supabase Edge Functions</b> as backend Trading / OTC Service layer; <b>Pricing Engine</b> node (market price fetch, <b>50 BPS spread</b> applied); <b>30s TTL</b> on quote card; <b>Travel Rule Check</b> via [Blockchain Analytics Provider] inserted between KYT screen and settlement; <b>DvP (Delivery vs Payment)</b> settlement model on both AED and VA legs; Order / Trade DB updated to Supabase PostgreSQL; Client Ledger (PostgreSQL) posting node; Trade Audit Log with 50 BPS fee recorded; Failure / Retry path.</div>
+  <div class="added-note"><b>Added (minimal, append-only):</b> <b>Supabase Edge Functions</b> as backend Trading / OTC Service layer; <b>Pricing Engine</b> node (market price fetch, <b>50 BPS spread</b> applied); <b>30s TTL</b> on quote card; <b>Travel Rule Check</b> via VerifiX inserted between KYT screen and settlement; <b>DvP (Delivery vs Payment)</b> settlement model on both AED and VA legs; Order / Trade DB updated to Supabase PostgreSQL; Client Ledger (PostgreSQL) posting node; Trade Audit Log with 50 BPS fee recorded; Failure / Retry path.</div>
 </div>
 
 <!-- ============================================================ -->
@@ -302,9 +302,9 @@ flowchart TD
     BWEB --> FTDEP["First-time deposit check — if new sender: flag for admin notification + manual verification"]:::teal
     ADDR --> CADMON["Liminal Custody — Unique client deposit wallet, blockchain node monitoring for incoming on-chain tx"]:::teal
     CADMON -->|"Blockchain node confirms tx"| CWEB["Liminal Custody Webhook — POST /custody/webhooks/deposit — JWKS verified"]:::teal
-    CWEB --> KYT["[Blockchain Analytics Provider] — on-chain origin of funds check, wallet address screening, risk score returned"]:::teal
+    CWEB --> KYT["VerifiX — on-chain origin of funds check, wallet address screening, risk score returned"]:::teal
     KYT -->|"Risk = Clean"| SWEEP["Liminal Custody — Sweep VA from client deposit wallet to omnibus hot wallet (on-chain)"]:::teal
-    KYT -->|"Risk = Flagged"| KYTHOLD["Flag for MLRO review — deposit held, VerifiX + [Blockchain Analytics Provider] alert logged"]:::red
+    KYT -->|"Risk = Flagged"| KYTHOLD["Flag for MLRO review — deposit held, VerifiX + VerifiX alert logged"]:::red
     FTDEP --> IDEM["Dual idempotency check — 1. Event ID Redis SET NX — 2. Tx+status combo"]:::teal
     SWEEP --> IDEM
     IDEM --> DUPDEC{"Duplicate?"}:::amber
@@ -326,7 +326,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="added-note"><b>Added (minimal, append-only):</b> AED path: <b>IIAP Omnibus Account</b> at Zand Bank PJSC named on IBAN node; HMAC-SHA256 verified webhook; <b>first-time deposit admin notification</b> check node. VA path: <b>unique client deposit wallet</b> generated per customer via <b>Liminal Custody</b>; <b>[Blockchain Analytics Provider]</b> on-chain screening with risk score; <b>sweep from client deposit wallet to omnibus hot wallet</b> (on-chain) on clean result; flagged path to MLRO review.</div>
+  <div class="added-note"><b>Added (minimal, append-only):</b> AED path: <b>IIAP Omnibus Account</b> at Zand Bank PJSC named on IBAN node; HMAC-SHA256 verified webhook; <b>first-time deposit admin notification</b> check node. VA path: <b>unique client deposit wallet</b> generated per customer via <b>Liminal Custody</b>; <b>VerifiX</b> on-chain screening with risk score; <b>sweep from client deposit wallet to omnibus hot wallet</b> (on-chain) on clean result; flagged path to MLRO review.</div>
 </div>
 
 <!-- ============================================================ -->
@@ -356,7 +356,7 @@ flowchart TD
     DUAL -->|"Crypto payout"| CUSTSGN["Liminal Custody — multi-sig signing, pre-approved wallet whitelist enforced"]:::teal
     SINGLE -->|"AED payout"| BANKAPI
     SINGLE -->|"Crypto payout"| CUSTSGN
-    CUSTSGN -->|"Travel Rule — [Blockchain Analytics Provider] check"| TRVLW["Travel Rule compliance verified — counterparty wallet screened"]:::teal
+    CUSTSGN -->|"Travel Rule — VerifiX check"| TRVLW["Travel Rule compliance verified — counterparty wallet screened"]:::teal
     TRVLW -->|"Broadcast"| BCHAIN["Blockchain broadcast — tx signed + submitted to blockchain node"]:::teal
     BANKAPI --> BRES{"Bank result"}:::amber
     BCHAIN --> BRES
@@ -375,7 +375,7 @@ flowchart TD
     classDef pink fill:#E91E63,color:#fff,stroke:#C2185B,stroke-width:2px
   </div>
   <span class="valid">✓ Diagram syntax validated</span>
-  <div class="added-note"><b>Added (minimal, append-only):</b> Whitelist check node (pre-approved beneficiary addresses); Maker-Checker on PENDING_APPROVAL; <b>Zand Bank PJSC</b> payout API (AML/sanctions check on recipient, DvP label); <b>Liminal Custody</b> multi-sig signing with pre-approved wallet whitelist enforced; <b>Travel Rule Check</b> via [Blockchain Analytics Provider] before blockchain broadcast for crypto withdrawals; Failure / Retry path.</div>
+  <div class="added-note"><b>Added (minimal, append-only):</b> Whitelist check node (pre-approved beneficiary addresses); Maker-Checker on PENDING_APPROVAL; <b>Zand Bank PJSC</b> payout API (AML/sanctions check on recipient, DvP label); <b>Liminal Custody</b> multi-sig signing with pre-approved wallet whitelist enforced; <b>Travel Rule Check</b> via VerifiX before blockchain broadcast for crypto withdrawals; Failure / Retry path.</div>
 </div>
 
 <!-- ============================================================ -->
@@ -710,7 +710,7 @@ flowchart TD
         direction LR
         CUSTSVCT["Customer / Account Service"]:::teal
         KYCSVCT["KYC Service — VerifiX integration, doc orchestration"]:::teal
-        AMLSVCT["KYT / AML Screening Service — VerifiX KYT + [Blockchain Analytics Provider] — real-time + batch, Travel Rule, rules engine"]:::teal
+        AMLSVCT["KYT / AML Screening Service — VerifiX KYT + VerifiX — real-time + batch, Travel Rule, rules engine"]:::teal
         TRADESVCT["Trading / OTC Service — quote 30s TTL, 50 BPS spread, DvP settlement"]:::teal
         DEPSVCT["Deposits Service — Zand Bank PJSC webhook, Liminal Custody webhook, client deposit wallets, omnibus hot wallet sweep"]:::teal
         WDRSVCT["Withdrawals Service — approval workflow, payout orchestration"]:::teal
@@ -732,9 +732,7 @@ flowchart TD
 
     subgraph EXT["External Integrations"]
         direction LR
-        KYC_P["KYC Provider — VerifiX API — doc verification, liveness, sanctions"]:::purple
-        AML_P["VerifiX — real-time KYT screen, transaction monitoring, sanctions list"]:::purple
-        CHAIN_AML["[Blockchain Analytics Provider] — on-chain wallet screening, Travel Rule FATF compliance"]:::purple
+        VERIFX_P["VerifiX — KYC identity verification, KYT transaction monitoring, on-chain blockchain analytics, wallet screening, sanctions list, Travel Rule FATF"]:::purple
         BANK_P["Zand Bank PJSC — IBAN, IIAP Omnibus Account, inbound credit webhook, payout API"]:::purple
         CUST_P["Liminal Custody — client deposit wallets, omnibus hot wallet, multi-sig signing, balance API"]:::purple
         CHAIN_P["Blockchain Node Provider — tx broadcast + on-chain confirmation"]:::purple
@@ -770,11 +768,10 @@ flowchart TD
     REPSVCT --- CDMT
     AUDITLOGT --- CDMT
 
-    KYCSVCT <-->|"API"| KYC_P
-    AMLSVCT <-->|"API"| AML_P
-    AMLSVCT <-->|"API"| CHAIN_AML
-    WDRSVCT <-->|"Travel Rule API"| CHAIN_AML
-    DEPSVCT <-->|"on-chain screening"| CHAIN_AML
+    KYCSVCT <-->|"API"| VERIFX_P
+    AMLSVCT <-->|"API"| VERIFX_P
+    WDRSVCT <-->|"Travel Rule API"| VERIFX_P
+    DEPSVCT <-->|"on-chain screening"| VERIFX_P
     DEPSVCT <-->|"Webhook / API"| BANK_P
     WDRSVCT <-->|"API"| BANK_P
     DEPSVCT <-->|"Webhook / API"| CUST_P
@@ -983,22 +980,11 @@ flowchart TD
 flowchart TD
     PLATFORM["Coin Spot Platform — API Gateway + Application Services"]:::blue
 
-    subgraph KYC_INT["KYC Integration"]
-        KYCPROV["KYC Provider — VerifiX API — doc verification, liveness, sanctions"]:::purple
-        KYCWH["Webhook callback — JWKS-verified, result + risk score"]:::teal
-        KYCRTY["KYC retry — on callback failure: exponential backoff, dead-letter queue"]:::teal
-    end
-
-    subgraph AML_INT["KYT / AML / Sanctions Integration — VerifiX"]
-        AMLPROV["VerifiX — real-time KYT screen API, transaction monitoring, sanctions list delta feed"]:::purple
-        AMLFEED["List update feed — scheduled pull, version-controlled, applied atomically"]:::navy
-        AMLRTY["KYT retry — on timeout: queue + replay, alert on repeated failure"]:::teal
-    end
-
-    subgraph BLOCKCHAIN_INT["Blockchain Analytics Integration"]
-        BCPROV["[Blockchain Analytics Provider] — on-chain wallet screening, address risk scoring, Travel Rule FATF"]:::purple
-        BCRTY["Screening retry — on timeout: queue + replay, alert compliance team"]:::teal
-        BCNOTE["Status: Unconfirmed — provider to be confirmed"]:::navy
+    subgraph VERIFX_INT["VerifiX — KYC / KYT / Blockchain Analytics / Sanctions / Travel Rule"]
+        KYCPROV["VerifiX — KYC identity verification, liveness, document check, KYT transaction monitoring, on-chain wallet screening, blockchain analytics, sanctions list, Travel Rule FATF"]:::purple
+        KYCWH["Webhook callback — JWKS-verified, result + risk score returned"]:::teal
+        KYCRTY["Retry — on callback failure: exponential backoff, dead-letter queue"]:::teal
+        AMLFEED["Sanctions list update feed — scheduled pull, version-controlled, applied atomically"]:::navy
     end
 
     subgraph BANK_INT["Banking / Payment Integration"]
@@ -1033,22 +1019,14 @@ flowchart TD
         REGEXP["Regulatory export — structured XML / PDF report generation, signed before submission"]:::teal
     end
 
-    PLATFORM <-->|"REST API — OAuth2 bearer"| KYCPROV
-    KYCPROV -->|"result"| KYCWH
+    PLATFORM <-->|"REST API — OAuth2 bearer + API key, TLS"| KYCPROV
+    KYCPROV -->|"webhook result"| KYCWH
     KYCWH --> PLATFORM
     KYCPROV -->|"on failure"| KYCRTY
     KYCRTY --> PLATFORM
-
-    PLATFORM <-->|"REST API — API key, TLS"| AMLPROV
-    AMLPROV -->|"delta feed"| AMLFEED
-    AMLPROV -->|"on timeout"| AMLRTY
-    AMLRTY --> PLATFORM
-    PLATFORM <-->|"REST API — API key, TLS"| BCPROV
-    BCPROV -->|"on timeout"| BCRTY
-    BCRTY --> PLATFORM
+    KYCPROV -->|"sanctions delta feed"| AMLFEED
     AMLFEED --> PLATFORM
-    AMLPROV -->|"on timeout"| AMLRTY
-    AMLRTY --> PLATFORM
+    AMLFEED --> PLATFORM
 
     PLATFORM <-->|"REST + Webhook — HMAC"| BANKPART
     BANKPART -->|"inbound"| BANKWH
