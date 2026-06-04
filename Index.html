@@ -600,21 +600,21 @@ flowchart TD
 <div class="journey new-diagram" id="j11">
   <h2>Journey 11: Cross-Journey Data Flow <span class="badge">NEW</span></h2>
   <div class="mermaid">
-flowchart TD
+flowchart LR
     subgraph FRONT["Presentation Layer"]
-        direction LR
+        direction TB
         CAPP["Customer App — web/mobile"]:::blue
         ADMCON["Admin Console — staff portal"]:::amber
     end
 
     subgraph GATEWAY["API Gateway + Auth"]
-        direction LR
+        direction TB
         APIGW["Supabase Edge Functions — TLS, JWT validation, rate limiting, serverless routing"]:::teal
         AUTHSVC["Supabase Auth — token issuance, OAuth2/OIDC, RBAC, PostgreSQL session store"]:::teal
     end
 
     subgraph CORESVCS["Core Platform Services"]
-        direction LR
+        direction TB
         CUSTSVC["Customer / Account Service"]:::teal
         KYCSVC["KYC Service"]:::teal
         AMLSVC["AML / Screening Service"]:::teal
@@ -626,7 +626,7 @@ flowchart TD
     end
 
     subgraph DATASTORES["Data Stores"]
-        direction LR
+        direction TB
         CPD["Customer Profile DB — PII, AES-256 at rest"]:::navy
         KYCDS["KYC Document Store — encrypted object storage"]:::navy
         AMLCD["AML / Compliance Case Store"]:::navy
@@ -637,7 +637,7 @@ flowchart TD
     end
 
     subgraph REPORTING["Reporting + Dashboard"]
-        direction LR
+        direction TB
         MLROUI["MLRO Dashboard — real-time compliance view"]:::purple
         REGOUT["Regulatory Reporting Output — VARA filings, goAML SARs, board reports"]:::purple
     end
@@ -693,9 +693,9 @@ flowchart TD
 <div class="journey new-diagram" id="d12">
   <h2>Diagram 12: Technical Architecture <span class="badge">NEW</span></h2>
   <div class="mermaid">
-flowchart TD
+flowchart LR
     subgraph CLIENT["Client Tier"]
-        direction LR
+        direction TB
         WEB["Web / Mobile Frontend — React SPA, iOS, Android"]:::blue
         ADMPORT["Admin Portal — internal staff browser client"]:::amber
     end
@@ -707,7 +707,7 @@ flowchart TD
     end
 
     subgraph APP["Application Services Tier"]
-        direction LR
+        direction TB
         CUSTSVCT["Customer / Account Service"]:::teal
         KYCSVCT["KYC Service — VerifiX integration, doc orchestration"]:::teal
         AMLSVCT["KYT / AML Screening Service — VerifiX KYT + VerifiX — real-time + batch, Travel Rule, rules engine"]:::teal
@@ -719,7 +719,7 @@ flowchart TD
     end
 
     subgraph DATA["Data Tier"]
-        direction LR
+        direction TB
         CUSTDBT["Customer Profile DB — Supabase PostgreSQL, AES-256 encrypted, PII"]:::navy
         KYCDSTT["KYC Document Store — Supabase Storage / object storage, AES-256, versioned"]:::navy
         TRADEDB["Order / Trade DB — Supabase PostgreSQL, immutable trade records"]:::navy
@@ -731,7 +731,7 @@ flowchart TD
     end
 
     subgraph EXT["External Integrations"]
-        direction LR
+        direction TB
         VERIFX_P["VerifiX — KYC identity verification, KYT transaction monitoring, on-chain blockchain analytics, wallet screening, sanctions list, Travel Rule FATF"]:::purple
         BANK_P["Zand Bank PJSC — IBAN, IIAP Omnibus Account, inbound credit webhook, payout API"]:::purple
         CUST_P["Liminal Custody — client deposit wallets, omnibus hot wallet, multi-sig signing, balance API"]:::purple
@@ -887,7 +887,7 @@ flowchart TD
 <div class="journey new-diagram" id="d14">
   <h2>Diagram 14: Redundancy, Failover &amp; Disaster Recovery <span class="badge">NEW</span></h2>
   <div class="mermaid">
-flowchart TD
+flowchart LR
     subgraph PRIMARY["Primary Production Environment — AZ-A"]
         direction TB
         PAPIGW["API Gateway — active"]:::teal
